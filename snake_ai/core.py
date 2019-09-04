@@ -58,7 +58,7 @@ class Snake:
         should_extend: boolean determining whether or not the snake should grow due to the tile it
         has traversed."""
         if (self.head.direction + direction == np.zeros(2)).all():
-            return  # The given direction is the opposite of the facing direction.
+            direction = self.head.direction
 
         self.body.appendleft(_snake_part(self.head.position + direction, direction))
 
@@ -113,7 +113,7 @@ class GameState:
 
         while len(self.food_items) < self.food_max:
             # TODO(matthew-c21) - Optimize the selection algorithm to avoid possible slowdowns.
-            new_food = _food_item([np.random.randint(n) for n in length, width], 30, 1)
+            new_food = _food_item([np.random.randint(n) for n in (length, width)], 30, 1)
             if self.snake.intersects(new_food.position):
                 continue
 
