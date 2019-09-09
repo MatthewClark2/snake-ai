@@ -12,7 +12,7 @@ RIGHT = -LEFT
 
 
 # Helper class to clarify each segment of a snake.
-_snake_part = namedtuple('snake_part', ['position', 'direction'])
+_snake_part = namedtuple('snake_part', ['position', 'direction', 'has_eaten'])
 _food_item = namedtuple('food_item', ['position', 'freshness', 'value'])
 
 
@@ -28,7 +28,7 @@ class Snake:
 
         self.body = deque()  # The tail is stored at the head of the queue.
         for i in range(init_length):
-            self.body.append(_snake_part(start_pos - i * facing, facing))
+            self.body.append(_snake_part(start_pos - i * facing, facing, False))
 
         self.length = init_length
 
@@ -45,7 +45,7 @@ class Snake:
         return '\n'.join([str(part) for part in self])
 
 
-    def move(self, direction, should_extend=False):
+    def move(self, direction, has_eaten=False):
         """Cause the snake to change it's direction, adjusting the rest of the body forward.
 
         If the provided direction is the opposite of the facing direction, then the snake will just
@@ -60,9 +60,9 @@ class Snake:
         if (self.head.direction + direction == np.zeros(2)).all():
             direction = self.head.direction
 
-        self.body.appendleft(_snake_part(self.head.position + direction, direction))
+        self.body.appendleft(_snake_part(self.head.position + direction, direction, has_eaten))
 
-        if not should_extend:
+        if not self.body[-1].has_eaten:
             self.body.pop()
 
 

@@ -7,6 +7,7 @@ def assert_snake_has_position(snake, position):
         np.testing.assert_array_equal(part.position, position[i])
 
 
+# TODO(matthew-c21) - Add test code for eating.
 class CoreTest(unittest.TestCase):
     def test_snake_creation_up(self):
         pos = [np.array(x) for x in [(5, 5), (5, 4), (5, 3)]]
