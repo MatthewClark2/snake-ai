@@ -4,7 +4,7 @@ import snake_ai.core as core
 
 def assert_snake_has_position(snake, position):
     for i, part in enumerate(snake):
-        np.testing.assert_array_equal(part.position, position[i])
+        np.testing.assert_array_equal(part.pos, position[i])
 
 
 # TODO(matthew-c21) - Add test code for eating.

@@ -12,8 +12,8 @@ RIGHT = -LEFT
 
 
 # Helper class to clarify each segment of a snake.
-_snake_part = namedtuple('snake_part', ['position', 'direction', 'has_eaten'])
-_food_item = namedtuple('food_item', ['position', 'freshness', 'value'])
+_snake_part = namedtuple('snake_part', ['pos', 'has_eaten'])
+_food_item = namedtuple('food_item', ['pos', 'value'])
 
 
 class Snake:
@@ -27,8 +27,9 @@ class Snake:
         facing: UP, DOWN, LEFT, or RIGHT in this package."""
 
         self.body = deque()  # The tail is stored at the head of the queue.
+        self.facing = facing
         for i in range(init_length):
-            self.body.append(_snake_part(start_pos - i * facing, facing, False))
+            self.body.append(_snake_part(start_pos - i * facing, False))
 
         self.length = init_length
 
@@ -37,7 +38,7 @@ class Snake:
         """Return an iterator that begins at the head of the snake and moves to the tail.
 
         Each value yielded is a named tuple in the form (position, direction), with both values
-        being two-dimensional vectors represented by np.ndarray."""
+        being two-value vectors represented by np.ndarray."""
         return iter(self.body)
 
 
@@ -57,10 +58,10 @@ class Snake:
             face.
         should_extend: boolean determining whether or not the snake should grow due to the tile it
         has traversed."""
-        if (self.head.direction + direction == np.zeros(2)).all():
-            direction = self.head.direction
+        if (self.facing + direction == np.zeros(2)).all():
+            direction = self.facing
 
-        self.body.appendleft(_snake_part(self.head.position + direction, direction, has_eaten))
+        self.body.appendleft(_snake_part(self.head().pos + direction, has_eaten))
 
         if not self.body[-1].has_eaten:
             self.body.pop()
@@ -71,9 +72,12 @@ class Snake:
         return any(position == p.position for p in body[start_pos:])
 
 
-    @property
     def head(self):
         return self.body[0]
+
+
+    def __len__(self):
+        return len(self.body)
 
 
 #TODO(matthew-c21) - Extract an abstract class to simplify later board designs.
@@ -87,7 +91,7 @@ class GameState:
         self.snake = snake
         self.food_max = 1
         self.food_items = []
-        self.previous_position = snake.head.position
+        self.previous_position = snake.head().pos
         self.score = 0
 
 
@@ -107,23 +111,37 @@ class GameState:
 
         return self.snake.intersects(updated_position, 1) or self._out_of_bounds(updated_position)
 
-    def _update_food(self):
-        self.food_items = filter(lambda f: f.freshness <= 0, [food_item(f.position, f.freshness - 1)
-                                                              for food in self.food_items])
 
+    def _update_food(self):
         while len(self.food_items) < self.food_max:
             # TODO(matthew-c21) - Optimize the selection algorithm to avoid possible slowdowns.
-            new_food = _food_item([np.random.randint(n) for n in (length, width)], 30, 1)
-            if self.snake.intersects(new_food.position):
+            new_food = _food_item([np.random.randint(n) for n in (length, width)], 100)  # 100 is just a hard-coded value for all food items.
+            if self.snake.intersects(new_food.pos):
                 continue
 
             food_items.append(new_food)
 
 
     def _out_of_bounds(self, position):
-        return position[0] < 0 or position[1] < 0 or position[0] >= length or position[1] >= width
+        return 0 <= position[0] < self.width and 0 <= position[1] < self.length
 
 
-def trigger_game_over(game_state):
-    """This is where all game cleanup etc. takes place."""
-    pass
+    def score(self):
+        return self.score
+
+
+    def size(self):
+        return width, length
+
+
+    def to_matrix(self):
+        # TODO(matthew-c21): This represents game state, so it can probably be simplified to food and snake locations rather than including empty space.
+        # TODO(matthew-c21): Since this matrix represents both game state and possible reward of interaction, consider penalizing non-food movement.
+        matrix = np.zeros((self.length, self.width))
+        for part in snake:
+            matrix[part.pos] = -100
+
+        for food in food_items:
+            matrix[food.pos] = food.value
+
+        return matrix
