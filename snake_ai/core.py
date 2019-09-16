@@ -126,6 +126,12 @@ class GameState:
         return 0 <= position[0] < self.width and 0 <= position[1] < self.length
 
 
+    def set_food(self, new_food):
+        """Manually set the location of all food on screen, either for debugging or replay purposes."""
+        # TODO(matthew-c21): Validate the new food inputs.
+        self.food_items = new_food
+
+
     def score(self):
         return self.score
 
