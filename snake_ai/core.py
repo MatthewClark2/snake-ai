@@ -1,6 +1,5 @@
 """Contains main game logic."""
 
-import pygame
 import numpy as np
 from collections import deque, namedtuple
 
@@ -67,9 +66,17 @@ class Snake:
             self.body.pop()
 
 
+    # TODO(matthew-c21): Test intersections.
     def intersects(self, position, start_pos=0):
+        print(position)
+        print(start_pos)
         """Helper method to determine if a position makes contact with this snake."""
-        return any(position == p.position for p in body[start_pos:])
+        for i in range(1, len(self.body)):
+            if (position == self.body[i].pos).all():
+                return True
+
+        return False
+        # return any(position == p.position for p in self.body[start_pos:])
 
 
     def head(self):
@@ -81,6 +88,7 @@ class Snake:
 
 
 #TODO(matthew-c21) - Extract an abstract class to simplify later board designs.
+# TODO(matthew-c21): Give it a seedable RNG for well-behaved replays.
 class GameState:
     """Primitive board implementation.
 
@@ -93,6 +101,7 @@ class GameState:
         self.food_items = []
         self.previous_position = snake.head().pos
         self.score = 0
+        self._update_food()
 
 
     def update(self, direction):
@@ -115,11 +124,11 @@ class GameState:
     def _update_food(self):
         while len(self.food_items) < self.food_max:
             # TODO(matthew-c21) - Optimize the selection algorithm to avoid possible slowdowns.
-            new_food = _food_item([np.random.randint(n) for n in (length, width)], 100)  # 100 is just a hard-coded value for all food items.
+            new_food = _food_item([np.random.randint(n) for n in (self.width, self.length)], 100)  # 100 is just a hard-coded value for all food items.
             if self.snake.intersects(new_food.pos):
                 continue
 
-            food_items.append(new_food)
+            self.food_items.append(new_food)
 
 
     def _out_of_bounds(self, position):
@@ -141,13 +150,18 @@ class GameState:
 
 
     def to_matrix(self):
+        # TODO(matthew-c21): Test the output of this method.
         # TODO(matthew-c21): This represents game state, so it can probably be simplified to food and snake locations rather than including empty space.
         # TODO(matthew-c21): Since this matrix represents both game state and possible reward of interaction, consider penalizing non-food movement.
         matrix = np.zeros((self.length, self.width))
-        for part in snake:
-            matrix[part.pos] = -100
+        for part in self.snake:
+            x, y = part.pos
+            matrix[y, x] = -100  # numpy matrices are accessed row, column
+            # matrix[np.array(part.pos, dtype=np.int32)] = -100
 
-        for food in food_items:
-            matrix[food.pos] = food.value
+        for food in self.food_items:
+            x, y = food.pos
+            matrix[y, x] = food.value
+            # matrix[food.pos[0]][food.pos[1]] = food.value
 
         return matrix

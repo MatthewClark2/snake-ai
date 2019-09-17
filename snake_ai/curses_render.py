@@ -13,35 +13,26 @@ class TerminalRenderer(render.Renderer):
         self.stdscr.keypad(True)
 
 
-
-    def _render(self, snake, food_items):
-        self.stdscr.clear()
-
-        for part in snake:
-            x, y = part.pos
-            self.stdscr.addstr(y, x, "o")
-
-        for food in food_items:
-            x, y = food.pos
-            self.stdscr.addstr(y, x, "x")
-
-
     def render(self, game_state):
         self.stdscr.clear()
 
         # TODO(matthew-c21): This currently assumes that both the game state is a matrix representing the screen, and that spaces are 0.
-        for x, row in game_state:
-            for y, val in row:
-                if v < 0:  # Snake part
-                    self.stdscr.addstr(y, x, "o")
-                elif v > 0:  # Food
-                    self.stdscr.addstr(y, x, "x")
+        for x, row in enumerate(game_state.to_matrix()):
+            for y, val in enumerate(row):
+                if val < 0:  # Snake part
+                    self.stdscr.addstr("o")
+                elif val > 0:  # Food
+                    self.stdscr.addstr("x")
+                else:
+                    self.stdscr.addstr(" ")
+            self.stdscr.addstr("\n")
 
         self.stdscr.refresh()
 
 
     def replay(self, initial_state, moves, food_states, replay_speed):
         # TODO(matthew-c21): This implementation implies the existence of just one food. Fix that so it's less limited.
+        # @TODO(matthew-c21): Conceptually fixed via the introduction of seeded RNG.
         state = initial_state
         curr_food = 0
         t, food = food_states[curr_food]
@@ -60,3 +51,12 @@ class TerminalRenderer(render.Renderer):
         curses.nocbreak()
         self.stdscr.keypad(False)
         curses.endwin()
+
+
+    def asyncKeys(self, value):
+        self.stdscr.nodelay(value)
+
+
+    def getKey(self):
+        """Lock and wait for the next keypress from the terminal. This can be used to have an interactive game environment. The sycnhonousness of this function depends on whether or not this object has been called with `asyncKeys(True)`."""
+        return self.stdscr.getkey()
