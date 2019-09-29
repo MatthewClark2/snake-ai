@@ -64,8 +64,6 @@ class Snake:
 
     # TODO(matthew-c21): Test intersections.
     def intersects(self, position, start_pos=0):
-        print(position)
-        print(start_pos)
         """Helper method to determine if a position makes contact with this snake."""
         for i in range(1, len(self.body)):
             if (position == self.body[i].pos).all():
@@ -94,6 +92,7 @@ class GameState:
         self.food_items = []
         self.previous_position = snake.head().pos
         self.score = 0
+        self.state_flag = True
         self._update_food()
 
     # TODO(matthew-c21): Have the board generate it's own snake given a relative size and initial facing direction.
@@ -111,7 +110,8 @@ class GameState:
         else:
             self.snake.move(direction, False)
 
-        return self.snake.intersects(updated_position, 1) or self._out_of_bounds(updated_position)
+        if self.snake.intersects(updated_position, 1) or self._out_of_bounds(updated_position):
+            self.state_flag = False
 
     def _update_food(self):
         while len(self.food_items) < self.food_max:
@@ -134,8 +134,14 @@ class GameState:
     def score(self):
         return self.score
 
+    def is_playable(self):
+        return self.state_flag
+
     def size(self):
         return self.width, self.length
+
+    def food(self):
+        return self.food_items
 
     def to_matrix(self):
         # TODO(matthew-c21): Test the output of this method.
