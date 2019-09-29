@@ -4,7 +4,7 @@ import numpy as np
 from collections import deque, namedtuple
 
 
-UP = np.array([0, 1])
+UP = np.array([0, -1])
 DOWN = -UP
 LEFT = np.array([-1, 0])
 RIGHT = -LEFT
@@ -32,7 +32,6 @@ class Snake:
 
         self.length = init_length
 
-
     def __iter__(self):
         """Return an iterator that begins at the head of the snake and moves to the tail.
 
@@ -40,10 +39,8 @@ class Snake:
         being two-value vectors represented by np.ndarray."""
         return iter(self.body)
 
-
     def __str__(self):
         return '\n'.join([str(part) for part in self])
-
 
     def move(self, direction, has_eaten=False):
         """Cause the snake to change it's direction, adjusting the rest of the body forward.
@@ -65,7 +62,6 @@ class Snake:
         if not self.body[-1].has_eaten:
             self.body.pop()
 
-
     # TODO(matthew-c21): Test intersections.
     def intersects(self, position, start_pos=0):
         print(position)
@@ -76,12 +72,9 @@ class Snake:
                 return True
 
         return False
-        # return any(position == p.position for p in self.body[start_pos:])
-
 
     def head(self):
         return self.body[0]
-
 
     def __len__(self):
         return len(self.body)
@@ -103,7 +96,7 @@ class GameState:
         self.score = 0
         self._update_food()
 
-
+    # TODO(matthew-c21): Have the board generate it's own snake given a relative size and initial facing direction.
     def update(self, direction):
         """Updates the game state in accordance with the given move, and returns a boolean
         determining whether or not the game is still in a playable state."""
@@ -112,56 +105,51 @@ class GameState:
         updated_position = self.previous_position + direction
 
         for food in self.food_items:
-            if (food.position == updated_position).all():
+            if (food.pos == updated_position).all():
                 self.score += food.value
                 self.snake.move(direction, True)
         else:
-                self.snake.move(direction, False)
+            self.snake.move(direction, False)
 
         return self.snake.intersects(updated_position, 1) or self._out_of_bounds(updated_position)
-
 
     def _update_food(self):
         while len(self.food_items) < self.food_max:
             # TODO(matthew-c21) - Optimize the selection algorithm to avoid possible slowdowns.
-            new_food = _food_item([np.random.randint(n) for n in (self.width, self.length)], 100)  # 100 is just a hard-coded value for all food items.
+            # 100 is just a hard-coded value for all food items.
+            new_food = _food_item([np.random.randint(n) for n in (self.width, self.length)], 100)
             if self.snake.intersects(new_food.pos):
                 continue
 
             self.food_items.append(new_food)
 
-
     def _out_of_bounds(self, position):
         return 0 <= position[0] < self.width and 0 <= position[1] < self.length
-
 
     def set_food(self, new_food):
         """Manually set the location of all food on screen, either for debugging or replay purposes."""
         # TODO(matthew-c21): Validate the new food inputs.
         self.food_items = new_food
 
-
     def score(self):
         return self.score
 
-
     def size(self):
-        return width, length
-
+        return self.width, self.length
 
     def to_matrix(self):
         # TODO(matthew-c21): Test the output of this method.
-        # TODO(matthew-c21): This represents game state, so it can probably be simplified to food and snake locations rather than including empty space.
-        # TODO(matthew-c21): Since this matrix represents both game state and possible reward of interaction, consider penalizing non-food movement.
+        # TODO(matthew-c21): This represents game state, so it can probably be simplified to food and snake locations
+        #  rather than including empty space.
+        # TODO(matthew-c21): Since this matrix represents both game state and possible reward of interaction, consider
+        #  penalizing non-food movement.
         matrix = np.zeros((self.length, self.width))
         for part in self.snake:
             x, y = part.pos
             matrix[y, x] = -100  # numpy matrices are accessed row, column
-            # matrix[np.array(part.pos, dtype=np.int32)] = -100
 
         for food in self.food_items:
             x, y = food.pos
             matrix[y, x] = food.value
-            # matrix[food.pos[0]][food.pos[1]] = food.value
 
         return matrix

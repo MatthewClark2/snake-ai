@@ -2,6 +2,7 @@ import unittest
 import numpy as np
 import snake_ai.core as core
 
+
 def assert_snake_has_position(snake, position):
     for i, part in enumerate(snake):
         np.testing.assert_array_equal(part.pos, position[i])
@@ -14,24 +15,20 @@ class CoreTest(unittest.TestCase):
         snake = core.Snake(pos[0], 3, core.UP)
         assert_snake_has_position(snake, pos)
 
-
     def test_snake_creation_down(self):
         pos = [np.array(x) for x in [(5, 5), (5, 6), (5, 7)]]
         snake = core.Snake(pos[0], 3, core.DOWN)
         (assert_snake_has_position(snake, pos))
-
 
     def test_snake_creation_left(self):
         pos = [np.array(x) for x in [(5, 5), (6, 5), (7, 5)]]
         snake = core.Snake(pos[0], 3, core.LEFT)
         (assert_snake_has_position(snake, pos))
 
-
     def test_snake_creation_right(self):
         pos = [np.array(x) for x in [(5, 5), (4, 5), (3, 5)]]
         snake = core.Snake(pos[0], 3, core.RIGHT)
         (assert_snake_has_position(snake, pos))
-
 
     def test_snake_move_up(self):
         snake_up    = core.Snake(np.array([6, 6]), 4, core.UP)
@@ -54,7 +51,6 @@ class CoreTest(unittest.TestCase):
         (assert_snake_has_position(snake_left, pos3))
         (assert_snake_has_position(snake_right, pos4))
 
-
     def test_snake_move_down(self):
         snake_up    = core.Snake(np.array([6, 6]), 4, core.UP)
         snake_down  = core.Snake(np.array([6, 6]), 4, core.DOWN)
@@ -75,7 +71,6 @@ class CoreTest(unittest.TestCase):
         (assert_snake_has_position(snake_down, pos2))
         (assert_snake_has_position(snake_left, pos3))
         (assert_snake_has_position(snake_right, pos4))
-
 
     def test_snake_move_left(self):
         snake_up    = core.Snake(np.array([6, 6]), 4, core.UP)
@@ -98,7 +93,6 @@ class CoreTest(unittest.TestCase):
         (assert_snake_has_position(snake_left, pos3))
         (assert_snake_has_position(snake_right, pos4))
 
-
     def test_snake_move_right(self):
         snake_up    = core.Snake(np.array([6, 6]), 4, core.UP)
         snake_down  = core.Snake(np.array([6, 6]), 4, core.DOWN)
@@ -120,12 +114,34 @@ class CoreTest(unittest.TestCase):
         (assert_snake_has_position(snake_left, pos3))
         (assert_snake_has_position(snake_right, pos4))
 
-
     def test_single_length_snake_cannot_reverse(self):
         snake = core.Snake(np.array([3, 3]), 1, core.UP)
         snake.move(core.DOWN)
 
         (assert_snake_has_position(snake, [np.array([3, 4])]))
+
+    def test_snake_self_intersects(self):
+        pass
+
+    def test_snake_does_not_intersect_some(self):
+        pass
+
+    def test_state_becomes_unplayable_on_update(self):
+        pass
+
+    # TODO(matthew-c21): The matrix representation of the gamestate may be simplified in the future meaning that this
+    #  test will have to be changed.
+    def test_state_matrix_correct(self):
+        pass
+
+    def test_board_update_correctly_modifies_snake(self):
+        pass
+
+    def test_board_update_does_not_cycle(self):
+        pass
+
+    def test_snake_pos_may_not_go_negative_in_game_state(self):
+        pass
 
 
 if __name__ == '__main__':
