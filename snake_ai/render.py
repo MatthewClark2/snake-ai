@@ -1,4 +1,5 @@
 import curses
+import time
 from abc import ABC, abstractmethod
 
 
@@ -20,7 +21,7 @@ class Renderer(ABC):
         pass
 
     @abstractmethod
-    def replay(self, initial_state, moves, food, replay_speed):
+    def replay(self, initial_state, moves, replay_speed):
         """Given an initial game state and a list of moves, play back the game from start to the point at which moves
         are no longer given.
 
@@ -48,44 +49,56 @@ class TerminalRenderer(Renderer):
         curses.cbreak()
         self.stdscr.keypad(True)
 
-    def render(self, game_state):
+    def render(self, game_state, game_count=None):
         self.stdscr.clear()
 
         # TODO(matthew-c21): This currently assumes that both the game state is a matrix representing the screen, and
         #  that spaces are 0.
         max_x, max_y = game_state.size()
         matrix = game_state.to_matrix()
-        for x in range(max_x):
-            row = matrix[x]
-            for y, val in enumerate(row):
-                if val < 0:  # Snake part
-                    self.stdscr.addstr("o")
-                elif val > 0:  # Food
-                    self.stdscr.addstr("x")
-                else:
-                    self.stdscr.addstr(" ")
-            self.stdscr.addstr("\n")
 
+        # Render corners.
+        self.stdscr.addstr(0, 0, '+')
+        self.stdscr.addstr(max_y, 0, '+')
+        self.stdscr.addstr(max_y, max_x, '+')
+        self.stdscr.addstr(0, max_x, '+')
+
+        # Render vertical walls.
+        for i in range(1, max_y):
+            self.stdscr.addstr(i, 0, '|')
+            self.stdscr.addstr(i, max_x, '|')
+
+        # Render horizontal walls.
+        for i in range(1, max_x):
+            self.stdscr.addstr(0, i, '-')
+            self.stdscr.addstr(max_y, i, '-')
+
+        # Render snake and food.
+        for y in range(max_x):
+            row = matrix[y]
+            for x, val in enumerate(row):
+                if val < 0:  # Snake part
+                    self.stdscr.addstr(y, x, "o")
+                elif val > 0:  # Food
+                    self.stdscr.addstr(y, x, "x")
+
+        # Render debugging info.
         self.stdscr.addstr(0, max_x + 4, "Head pos: " + str(game_state.snake.head().pos))
         self.stdscr.addstr(max_y // 3, max_x + 4, "Playable? " + str(game_state.is_playable()))
-        self.stdscr.addstr(max_y - 1, max_x + 4, "Score: " + str(game_state.get_score()), )
+        self.stdscr.addstr(max_y - 1, max_x + 4, "Score: " + str(game_state.get_score()))
 
+        if game_count is not None:
+            self.stdscr.addstr(2 * max_y // 3, max_x + 4, "Game " + str(game_count))
+
+        # Actually draw to screen.
         self.stdscr.refresh()
 
-    def replay(self, initial_state, moves, food_states, replay_speed):
-        # TODO(matthew-c21): This implementation implies the existence of just one food. Fix that so it's less limited.
-        # TODO(matthew-c21): Conceptually fixed via the introduction of seeded RNG.
-        state = initial_state
-        curr_food = 0
-        t, food = food_states[curr_food]
-
-        for i, move in moves:
-            if i == t:
-                state.set_food([food])
-                curr_food += 1
-                t, food = food_states[curr_food]
-
-            state.update(move)
+    def replay(self, initial_state, moves, replay_speed):
+        delay = 1 / replay_speed
+        for move in moves:
+            self.render(initial_state)
+            initial_state.update(move)
+            time.sleep(delay)
 
     def close(self):
         curses.echo()
