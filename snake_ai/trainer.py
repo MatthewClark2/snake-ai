@@ -1,15 +1,27 @@
+import argparse
+import sys
+import time
+
 import keras
+import numpy as np
 import tensorflow.compat.v1 as tf
 
 import ai
 import core
 from render import TerminalRenderer
 
-import numpy as np
-import time
-
-
 MAX_EPSILON = 200  # Hardcoded value based on example code.
+
+
+def parse_args(args):
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--size', default=20, type=int, dest='size')
+    parser.add_argument('--display', default='1', type=int, dest='display')
+    parser.add_argument('--count', default=10, type=int, dest='count')
+    parser.add_argument('--init-dir', default='left', dest='init_dir', choices=['up', 'down', 'left', 'right'])
+    parser.add_argument('--speed', default=2, type=int, dest='speed')
+
+    return parser.parse_args(args)
 
 
 def determine_reward(old_state, new_state, playable, movement_reward=0):
@@ -42,28 +54,39 @@ def reshape(matrix):
     return matrix.reshape((1, -1))
 
 
-def main(*args):
+def main(args=None):
     # Suppress all non-vital tensorflow warnings.
     tf.logging.set_verbosity(tf.logging.ERROR)
 
-    n = 10
-    length = 20
-    width = 20
-    dim = (length + 1) * (width + 1)
-    init_dir = core.LEFT
+    args = parse_args(args)
 
-    # TODO(matthew-c21): Provide a way to only show some games, or just replay decent ones from a training session.
-    rendering = True
-    moves_per_second = 2  # This seems to be the fastest that the training can be done without notable slowdowns.
+    n = args.count
+    length = args.size
+    width = length  # Default to being square. This may be changed in the future.
+    init_dir = {
+        'up': core.UP,
+        'down': core.DOWN,
+        'left': core.LEFT,
+        'right': core.RIGHT,
+    }[args.init_dir]
+
+    # Shows one game per every games_shown games.
+    games_shown = args.display
+
+    moves_per_second = args.speed
     base_delay = 1 / moves_per_second
 
+    dim = (length + 1) * (width + 1)
+
     renderer = None
-    if rendering:
+    if games_shown != 0:
         renderer = TerminalRenderer()
 
     agent = ai.DefaultAgent(dim)
 
     for i in range(n):
+        rendering = games_shown != 0 and i % games_shown == 0
+
         snake = core.Snake((width // 2, length // 2), length // 4, init_dir)
         state = core.GameState(snake, length, width)
 
@@ -95,7 +118,6 @@ def main(*args):
             agent.train_short_memory(old_col, move, reward, new_col, state.is_playable())
             agent.remember(old_col, move, reward, new_col, state.is_playable())
 
-            # TODO(matthew-c21): Enable rendering with a command line flag.
             if rendering:
                 renderer.render(state, i)
                 elapsed_time = time.time() - loop_start
@@ -107,4 +129,4 @@ def main(*args):
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
