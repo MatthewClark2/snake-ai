@@ -3,10 +3,6 @@ import time
 from abc import ABC, abstractmethod
 
 
-# TODO(matthew-c21): Move all renderers into this file.
-# TODO(matthew-c21): Have all renderers show debugging information about the game state rather than just a raw cut of it
-
-
 class Renderer(ABC):
     """Showing the game itself requires some level of persistent resources as well as actual rendering logic. This class
     serves as the basis for all implementations."""

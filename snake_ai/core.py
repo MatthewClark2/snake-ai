@@ -59,7 +59,6 @@ class Snake:
         else:
             self.body[-1] = _snake_part(self.body[-1].pos, False)
 
-    # TODO(matthew-c21): Test intersections.
     def intersects(self, position, start_pos=0):
         """Helper method to determine if a position makes contact with this snake."""
         for part in list(self)[start_pos:]:
@@ -81,14 +80,12 @@ class Snake:
 
 
 # TODO(matthew-c21) - Extract an abstract class to simplify later board designs.
-# TODO(matthew-c21): Give it a seedable RNG for well-behaved replays.
 class GameState:
     """Primitive board implementation.
 
     No internal walls, outer perimeter acts as border, only one food item on screen at a time."""
 
     def __init__(self, snake, length, width, food_max=1, seed=None):
-        # TODO(matthew-c21): Add RNG seed for food generation.
         self.length = length
         self.width = width
         self.snake = snake
@@ -133,7 +130,6 @@ class GameState:
 
         self._update_food()
 
-        # TODO(matthew-c21): If the updated position is the result of an invalid move, this check may be incorrect.
         if self.snake.intersects(updated_position, 1) or \
                 GameState._out_of_bounds(self.width, self.length, updated_position):
             self.state_flag = False
@@ -171,8 +167,6 @@ class GameState:
     def to_matrix(self):
         # TODO(matthew-c21): This represents game state, so it can probably be simplified to food and snake locations
         #  rather than including empty space.
-        # TODO(matthew-c21): Since this matrix represents both game state and possible reward of interaction, consider
-        #  penalizing non-food movement.
         matrix = np.zeros((self.length + 1, self.width + 1))  # Add 1 since OOB is at width/length.
         for part in self.snake:
             x, y = part.pos

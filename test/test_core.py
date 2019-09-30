@@ -8,7 +8,6 @@ def assert_snake_has_position(snake, position):
         np.testing.assert_array_equal(part.pos, position[i])
 
 
-# TODO(matthew-c21) - Add test code for eating.
 class CoreTest(unittest.TestCase):
     # TODO(matthew-c21): The matrix representation of the game state may be simplified in the future meaning that this
     #  test will have to be changed.

@@ -18,7 +18,6 @@ def handle_game_over(game_state):
         print(game_state.score, file=logfile)
 
 
-# TODO(matthew-c21): Add some type of logging because this sure ain't working.
 def main(*args):
     init_dir = core.LEFT
     length = 10
