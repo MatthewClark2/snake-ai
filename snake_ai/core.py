@@ -108,25 +108,23 @@ class GameState:
         if not self.state_flag:
             return
 
+        self.snake.move(direction, any(self.snake.intersects(food.pos) for food in self.food_items))
+
+        updated_position = self.snake.head().pos
+
         self.seed += direction[0] * 10 + direction[1]
         self._update_food()
-
-        direction = self.snake.fix_dir(direction)
-        updated_position = self.previous_position + direction
 
         # TODO(matthew-c21): Ensure that all food items have unique positions so this loop doesn't execute more than
         #  once. Consider a map using position tuples as keys.
         for food in self.food_items:
-            if (food.pos == updated_position).all():
+            if self.snake.intersects(food.pos):
                 self.score += food.value
-                self.snake.move(direction, True)
-            else:
-                self.snake.move(direction, False)
-
-        self.food_items = list(filter(lambda f: (f.pos == updated_position).all(), self.food_items))
+                self.food_items.remove(food)
 
         # TODO(matthew-c21): If the updated position is the result of an invalid move, this check may be incorrect.
-        if self.snake.intersects(updated_position, 1) or self._out_of_bounds(self.width, self.length, updated_position):
+        if self.snake.intersects(updated_position, 1) or \
+                GameState._out_of_bounds(self.width, self.length, updated_position):
             self.state_flag = False
 
     def _update_food(self):
@@ -134,7 +132,7 @@ class GameState:
         while len(self.food_items) < self.food_max:
             # TODO(matthew-c21) - Optimize the selection algorithm to avoid possible slowdowns.
             # 100 is just a hard-coded value for all food items.
-            new_food = _food_item(np.array([np.random.randint(n) for n in (self.width, self.length)]), 100)
+            new_food = _food_item(np.array([np.random.randint(1, n) for n in (self.width, self.length)]), 100)
             if self.snake.intersects(new_food.pos):
                 continue
 
