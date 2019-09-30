@@ -2,7 +2,6 @@ import random
 from abc import ABC, abstractmethod
 
 import numpy as np
-import pandas as pd
 from keras.layers.core import Dense, Dropout
 from keras.models import Sequential
 from keras.optimizers import Adam
@@ -10,6 +9,7 @@ from keras.optimizers import Adam
 
 class Agent(ABC):
     """Interface for all snake-playing deep learning agents."""
+
     @abstractmethod
     def make_choice(self, game_state):
         """Determines a choice based on internal state and the given game state.
@@ -69,76 +69,72 @@ class RandomAgent(Agent):
 
 
 # TODO(matthew-c21) - Finish implementing this model.
-class DefaultAgent:
-    def __init__(self):
+class DefaultAgent(Agent):
+    def __init__(self, input_dim, learning_rate=0.00005, epsilon=0, gamma=0, weights=None):
+        self.input_dim = input_dim
+        self.learning_rate = learning_rate
+        self.epsilon = epsilon
+        self.gamma = gamma
         self.reward = 0
-        self.gamma = 0
-        self.data_frame = pd.DataFrame()
-        self.short_memory = np.array([])
-        self.agent_target = 1
-        self.agent_predict = 0
-        self.learning_rate = 0.00005
-        self.model = self.network()  # Note: this may be set with weights.
-        self.epsilon = 0
-        self.actual = []
         self.memory = []
+        self.short_memory = np.array([])
+        self.model = DefaultAgent._network(learning_rate, input_dim, weights=weights)
 
-    def get_state(self, board, snake):
-        state = np.zeros((board.width, board.length))
+    def set_reward(self, reward):
+        self.reward = reward
 
-        for ((x, y), _, value) in board.food_items:
-            state[x][y] = value * 10
+    def make_choice(self, game_state):
+        # TODO(matthew-c21): Determine if more configuration needed.
+        return self.model.predict(game_state)
 
-        for ((x, y), _) in snake:
-            state[x][y] = 1
+    def dump_weights(self):
+        return self.model.get_weights()
 
-        return state
+    def set_epsilon(self, epsilon):
+        self.epsilon = epsilon
 
-    def set_reward(self, board, snake):
-        if not board.is_playable():
-            self.reward -= 100
-        elif snake.head.has_eaten:
-            self.reward += 10
+    def remember(self, state, action, reward, next_state, done):
+        self.memory.append((state, action, reward, next_state, done))
 
-        return self.reward
+    def train_short_memory(self, state, action, reward, next_state, done):
+        target = reward
+        if not done:
+            target = reward + self.gamma * np.amax(self.make_choice(next_state)[0])
 
-    def network(self, weights=None):
+        target_f = self.make_choice(state)
+        target_f[0][np.argmax(action)] = target
+        self.model.fit(state, target_f, epochs=1, verbose=0)
+
+    def replay_new(self, max_sample=1000):
+        """Retrain the model based on a sampling of its own memory."""
+        # TODO(matthew-c21): Determine how this actually works.
+        if len(self.memory) > max_sample:
+            batch = random.sample(self.memory, max_sample)
+        else:
+            batch = self.memory
+        for state, action, reward, next_state, done in batch:
+            target = reward
+            if not done:
+                target = reward + self.gamma * np.amax(self.model.predict(next_state)[0])
+            target_f = self.make_choice(state)
+            target_f[0][np.argmax(action)] = target
+            self.model.fit(state, target_f, epochs=1, verbose=0)
+
+    @staticmethod
+    def _network(learning_rate, input_dim, output_dim=120, weights=None):
         # Shamelessly stolen from https://github.com/maurock/snake-ga/blob/master/DQN.py.
+        # TODO(matthew-c21): Determine how output_dim affects model.
         model = Sequential()
-        model.add(Dense(output_dim=120, activation='relu', input_dim=11))
+        model.add(Dense(units=input_dim, activation='relu', input_dim=input_dim))
         model.add(Dropout(0.15))
-        model.add(Dense(output_dim=120, activation='relu'))
+        model.add(Dense(units=input_dim, activation='relu'))
         model.add(Dropout(0.15))
-        model.add(Dense(output_dim=120, activation='relu'))
+        model.add(Dense(units=input_dim, activation='relu'))
         model.add(Dropout(0.15))
-        model.add(Dense(output_dim=3, activation='softmax'))
-        opt = Adam(self.learning_rate)
+        model.add(Dense(units=4, activation='softmax'))
+        opt = Adam(learning_rate)
         model.compile(loss='mse', optimizer=opt)
 
         if weights:
             model.load_weights(weights)
         return model
-
-    def remember(self, state, action, reward, next_state, done):
-        self.memory.append((state, action, reward, next_state, done))
-
-    def replay_new(self, memory):
-        if len(memory) > 1000:
-            minibatch = random.sample(memory, 1000)
-        else:
-            minibatch = memory
-        for state, action, reward, next_state, done in minibatch:
-            target = reward
-            if not done:
-                target = reward + self.gamma * np.amax(self.model.predict(np.array([next_state]))[0])
-            target_f = self.model.predict(np.array([state]))
-            target_f[0][np.argmax(action)] = target
-            self.model.fit(np.array([state]), target_f, epochs=1, verbose=0)
-
-    def train_short_memory(self, state, action, reward, next_state, done):
-        target = reward
-        if not done:
-            target = reward + self.gamma * np.amax(self.model.predict(next_state.reshape((1, 11)))[0])
-        target_f = self.model.predict(state.reshape((1, 11)))
-        target_f[0][np.argmax(action)] = target
-        self.model.fit(state.reshape((1, 11)), target_f, epochs=1, verbose=0)
