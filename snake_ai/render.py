@@ -95,9 +95,13 @@ class TerminalRenderer(Renderer):
 
     def replay(self, initial_state, moves, replay_speed):
         delay = 1 / replay_speed
+
+        # Render the initial state.
+        self.render(initial_state)
+
         for move in moves:
-            self.render(initial_state)
             initial_state.update(move)
+            self.render(initial_state)
             time.sleep(delay)
 
     def close(self):
