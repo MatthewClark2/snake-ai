@@ -61,6 +61,8 @@ def main(*args):
         reward = determine_reward(old_state, new_state)
         agent.set_reward(reward)
 
+        # TODO(matthew-c21): Consider training between games rather than on every move. This allows for a full test of a
+        #  given set of weights rather than shuffling them every time.
         agent.train_short_memory(old_state, move, reward, new_state, state.is_playable())
 
         agent.remember(old_state, move, reward, new_state, state.is_playable())
