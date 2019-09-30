@@ -126,7 +126,7 @@ class GameState:
         self.food_items = list(filter(lambda f: (f.pos == updated_position).all(), self.food_items))
 
         # TODO(matthew-c21): If the updated position is the result of an invalid move, this check may be incorrect.
-        if self.snake.intersects(updated_position, 1) or self._out_of_bounds(updated_position):
+        if self.snake.intersects(updated_position, 1) or self._out_of_bounds(self.width, self.length, updated_position):
             self.state_flag = False
 
     def _update_food(self):
@@ -140,9 +140,10 @@ class GameState:
 
             self.food_items.append(new_food)
 
-    def _out_of_bounds(self, position):
+    @staticmethod
+    def _out_of_bounds(width, length, position):
         x, y = position
-        if x <= 0 or x >= self.width or y <= 0 or y >= self.length:
+        if x <= 0 or x >= width or y <= 0 or y >= length:
             return True
         return False
 

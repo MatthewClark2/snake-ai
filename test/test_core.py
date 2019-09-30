@@ -196,6 +196,19 @@ class CoreTest(unittest.TestCase):
         matrix = state.to_matrix()
         self._check_matrix(snake, matrix)
 
+    def test_high_oob(self):
+        snake = core.Snake(np.array([5, 5]), 3, core.RIGHT)
+        state = core.GameState(snake, 6, 6, 0)
+
+        self.assertTrue(state.is_playable())
+        state.update(core.RIGHT)
+        self.assertFalse(state.is_playable())
+
+        snake = core.Snake(np.array([5, 5]), 3, core.RIGHT)
+        state = core.GameState(snake, 6, 6, 0)
+        state.update(core.DOWN)
+        self.assertFalse(state.is_playable())
+
 
 if __name__ == '__main__':
     unittest.main()
