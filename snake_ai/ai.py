@@ -40,9 +40,18 @@ class Agent(ABC):
         """Train the model according to its short term memory."""
         pass
 
+    @abstractmethod
+    def set_epsilon(self, epsilon):
+        """Set the randomness factor for this learning agent."""
+        pass
+
 
 class RandomAgent(Agent):
     """Implements virtually no methods, instead opting to choose moves at random for testing purposes."""
+
+    def set_epsilon(self, epsilon):
+        pass
+
     def make_choice(self, game_state):
         return np.random.randint(4)
 
