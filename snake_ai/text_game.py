@@ -21,10 +21,9 @@ def handle_game_over(game_state):
 # TODO(matthew-c21): Add some type of logging because this sure ain't working.
 def main(*args):
     init_dir = core.LEFT
-    game_playable = True
     length = 10
     width = 10
-    snake = core.Snake((width // 2, length // 2), width // 4, init_dir)
+    snake = core.Snake((width // 2, length // 2), 1, init_dir)
     state = core.GameState(snake, length, width)
     renderer = TerminalRenderer()
 
@@ -34,11 +33,10 @@ def main(*args):
 
     # A do-while loop would be nice here.
     renderer.render(state)
-
     input_dir = convert(renderer.get_key(), init_dir)
 
-    while game_playable:
-        game_playable = state.update(input_dir)
+    while state.is_playable():
+        state.update(input_dir)
         renderer.render(state)
         input_dir = convert(renderer.get_key(), input_dir)
 

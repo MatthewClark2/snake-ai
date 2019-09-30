@@ -53,7 +53,10 @@ class TerminalRenderer(Renderer):
 
         # TODO(matthew-c21): This currently assumes that both the game state is a matrix representing the screen, and
         #  that spaces are 0.
-        for x, row in enumerate(game_state.to_matrix()):
+        max_x, max_y = game_state.size()
+        matrix = game_state.to_matrix()
+        for x in range(max_x):
+            row = matrix[x]
             for y, val in enumerate(row):
                 if val < 0:  # Snake part
                     self.stdscr.addstr("o")
@@ -62,6 +65,10 @@ class TerminalRenderer(Renderer):
                 else:
                     self.stdscr.addstr(" ")
             self.stdscr.addstr("\n")
+
+        self.stdscr.addstr(0, max_x + 4, "Head pos: " + str(game_state.snake.head().pos))
+        self.stdscr.addstr(max_y // 3, max_x + 4, "Playable? " + str(game_state.is_playable()))
+        self.stdscr.addstr(max_y - 1, max_x + 4, "Score: " + str(game_state.get_score()), )
 
         self.stdscr.refresh()
 

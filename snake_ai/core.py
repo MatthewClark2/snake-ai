@@ -123,6 +123,8 @@ class GameState:
             else:
                 self.snake.move(direction, False)
 
+        self.food_items = list(filter(lambda f: (f.pos == updated_position).all(), self.food_items))
+
         # TODO(matthew-c21): If the updated position is the result of an invalid move, this check may be incorrect.
         if self.snake.intersects(updated_position, 1) or self._out_of_bounds(updated_position):
             self.state_flag = False
@@ -139,9 +141,12 @@ class GameState:
             self.food_items.append(new_food)
 
     def _out_of_bounds(self, position):
-        return not (0 < position[0] < self.width and 0 < position[1] < self.length)
+        x, y = position
+        if x <= 0 or x >= self.width or y <= 0 or y >= self.length:
+            return True
+        return False
 
-    def score(self):
+    def get_score(self):
         return self.score
 
     def is_playable(self):
@@ -154,12 +159,11 @@ class GameState:
         return self.food_items
 
     def to_matrix(self):
-        # TODO(matthew-c21): Test the output of this method.
         # TODO(matthew-c21): This represents game state, so it can probably be simplified to food and snake locations
         #  rather than including empty space.
         # TODO(matthew-c21): Since this matrix represents both game state and possible reward of interaction, consider
         #  penalizing non-food movement.
-        matrix = np.zeros((self.length, self.width))
+        matrix = np.zeros((self.length + 1, self.width + 1))  # Add 1 since OOB is at width/length.
         for part in self.snake:
             x, y = part.pos
             matrix[y, x] = -100  # numpy matrices are accessed row, column
