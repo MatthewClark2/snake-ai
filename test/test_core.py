@@ -209,6 +209,27 @@ class CoreTest(unittest.TestCase):
         state.update(core.DOWN)
         self.assertFalse(state.is_playable())
 
+    def test_snake_grows(self):
+        snake = core.Snake(np.array([3, 3]), 2, core.LEFT)
+        snake.move(core.LEFT, True)
+        snake.move(core.LEFT)
+        self.assertEqual(2, len(snake))
+        snake.move(core.LEFT)
+        self.assertEqual(3, len(snake))
+
+    def test_snake_grows_from_state(self):
+        # TODO(matthew-c21): Update this to match any changes to the seeding in GameState.
+        snake = core.Snake(np.array([5, 5]), 2, core.LEFT)
+        state = core.GameState(snake, 10, 10, seed=10)
+
+        for _ in range(4):
+            state.update(core.UP)
+
+        for _ in range(2):
+            state.update(core.LEFT)
+
+        self.assertEqual(3, len(snake))
+
 
 if __name__ == '__main__':
     unittest.main()

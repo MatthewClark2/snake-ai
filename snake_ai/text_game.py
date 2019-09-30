@@ -27,10 +27,6 @@ def main(*args):
     state = core.GameState(snake, length, width)
     renderer = TerminalRenderer()
 
-    # Put into a while loop.
-    # Get inputs from renderer.
-    # Feed inputs to state.
-
     # A do-while loop would be nice here.
     renderer.render(state)
     input_dir = convert(renderer.get_key(), init_dir)
@@ -40,8 +36,6 @@ def main(*args):
         renderer.render(state)
         input_dir = convert(renderer.get_key(), input_dir)
 
-    renderer.render(state)
-    renderer.get_key()  # Wait for a keypress to end the game.
     renderer.close()
 
 

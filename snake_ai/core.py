@@ -28,8 +28,6 @@ class Snake:
         for i in range(init_length):
             self.body.append(_snake_part(start_pos - i * facing, False))
 
-        self.length = init_length
-
     def __iter__(self):
         """Return an iterator that begins at the head of the snake and moves to the tail.
 
@@ -58,6 +56,8 @@ class Snake:
 
         if not self.body[-1].has_eaten:
             self.body.pop()
+        else:
+            self.body[-1] = _snake_part(self.body[-1].pos, False)
 
     # TODO(matthew-c21): Test intersections.
     def intersects(self, position, start_pos=0):
@@ -108,12 +108,21 @@ class GameState:
         if not self.state_flag:
             return
 
-        self.snake.move(direction, any(self.snake.intersects(food.pos) for food in self.food_items))
+        has_eaten = False
+
+        updated_pos = self.snake.fix_dir(direction) + self.snake.head().pos
+
+        for food in self.food_items:
+            if (food.pos == updated_pos).all():
+                has_eaten = True
+                break
+        # has_eaten = any(self.snake.intersects(food.pos) for food in self.food_items)
+        self.snake.move(direction, has_eaten)
 
         updated_position = self.snake.head().pos
 
         self.seed += direction[0] * 10 + direction[1]
-        self._update_food()
+        self.seed %= 2 ** 32
 
         # TODO(matthew-c21): Ensure that all food items have unique positions so this loop doesn't execute more than
         #  once. Consider a map using position tuples as keys.
@@ -121,6 +130,8 @@ class GameState:
             if self.snake.intersects(food.pos):
                 self.score += food.value
                 self.food_items.remove(food)
+
+        self._update_food()
 
         # TODO(matthew-c21): If the updated position is the result of an invalid move, this check may be incorrect.
         if self.snake.intersects(updated_position, 1) or \
