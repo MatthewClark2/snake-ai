@@ -54,10 +54,9 @@ class Snake:
             face.
         should_extend: boolean determining whether or not the snake should grow due to the tile it
         has traversed."""
-        if (self.facing + direction == np.zeros(2)).all():
-            direction = self.facing
+        self.facing = self.fix_dir(direction)
 
-        self.body.appendleft(_snake_part(self.head().pos + direction, has_eaten))
+        self.body.appendleft(_snake_part(self.head().pos + self.facing, has_eaten))
 
         if not self.body[-1].has_eaten:
             self.body.pop()
@@ -65,8 +64,8 @@ class Snake:
     # TODO(matthew-c21): Test intersections.
     def intersects(self, position, start_pos=0):
         """Helper method to determine if a position makes contact with this snake."""
-        for i in range(1, len(self.body)):
-            if (position == self.body[i].pos).all():
+        for part in list(self)[start_pos:]:
+            if (part.pos == position).all():
                 return True
 
         return False
@@ -76,6 +75,11 @@ class Snake:
 
     def __len__(self):
         return len(self.body)
+
+    def fix_dir(self, direction):
+        if (direction + self.facing == np.zeros(2)).all():
+            return self.facing
+        return direction
 
 
 #TODO(matthew-c21) - Extract an abstract class to simplify later board designs.
@@ -97,19 +101,27 @@ class GameState:
 
     # TODO(matthew-c21): Have the board generate it's own snake given a relative size and initial facing direction.
     def update(self, direction):
-        """Updates the game state in accordance with the given move, and returns a boolean
-        determining whether or not the game is still in a playable state."""
+        """Updates the game state in accordance with the given move. If the game is not in a playable state, no changes
+        will occur."""
+
+        if not self.state_flag:
+            return
+
         self._update_food()
 
+        direction = self.snake.fix_dir(direction)
         updated_position = self.previous_position + direction
 
+        # TODO(matthew-c21): Ensure that all food items have unique positions so this loop doesn't execute more than
+        #  once. Consider a map using position tuples as keys.
         for food in self.food_items:
             if (food.pos == updated_position).all():
                 self.score += food.value
                 self.snake.move(direction, True)
-        else:
-            self.snake.move(direction, False)
+            else:
+                self.snake.move(direction, False)
 
+        # TODO(matthew-c21): If the updated position is the result of an invalid move, this check may be incorrect.
         if self.snake.intersects(updated_position, 1) or self._out_of_bounds(updated_position):
             self.state_flag = False
 
@@ -117,14 +129,14 @@ class GameState:
         while len(self.food_items) < self.food_max:
             # TODO(matthew-c21) - Optimize the selection algorithm to avoid possible slowdowns.
             # 100 is just a hard-coded value for all food items.
-            new_food = _food_item([np.random.randint(n) for n in (self.width, self.length)], 100)
+            new_food = _food_item(np.array([np.random.randint(n) for n in (self.width, self.length)]), 100)
             if self.snake.intersects(new_food.pos):
                 continue
 
             self.food_items.append(new_food)
 
     def _out_of_bounds(self, position):
-        return 0 <= position[0] < self.width and 0 <= position[1] < self.length
+        return not (0 < position[0] < self.width and 0 < position[1] < self.length)
 
     def set_food(self, new_food):
         """Manually set the location of all food on screen, either for debugging or replay purposes."""

@@ -157,13 +157,18 @@ class CoreTest(unittest.TestCase):
                 if snake.intersects(np.array([i, j])):  # Note that positions are x,y, but matrix access is y,x.
                     self.assertTrue(matrix[j, i] < -1)
                 elif any((f.pos == [i, j]).all() for f in food):
-                    self.assertGreater(0, matrix[j, i])
+                    self.assertGreater(matrix[j, i], 0)
                 else:
                     self.assertTrue(-1 <= matrix[j, i] <= 0)
 
     def test_board_does_not_make_changes_after_game_over(self):
         snake = core.Snake(np.array([1, 1]), 1, core.LEFT)
         state = core.GameState(snake, 5, 5)
+
+        self.assertTrue(state.is_playable())
+        state.update(core.LEFT)
+        self.assertFalse(state.is_playable())
+        assert_snake_has_position(snake, [[0, 1]])
 
         for i in range(10):
             state.update(core.LEFT)
