@@ -1,14 +1,12 @@
 """Contains main game logic."""
-
-import numpy as np
 from collections import deque, namedtuple
 
+import numpy as np
 
 UP = np.array([0, -1])
 DOWN = -UP
 LEFT = np.array([-1, 0])
 RIGHT = -LEFT
-
 
 # Helper class to clarify each segment of a snake.
 _snake_part = namedtuple('snake_part', ['pos', 'has_eaten'])
@@ -82,21 +80,24 @@ class Snake:
         return direction
 
 
-#TODO(matthew-c21) - Extract an abstract class to simplify later board designs.
+# TODO(matthew-c21) - Extract an abstract class to simplify later board designs.
 # TODO(matthew-c21): Give it a seedable RNG for well-behaved replays.
 class GameState:
     """Primitive board implementation.
 
     No internal walls, outer perimeter acts as border, only one food item on screen at a time."""
-    def __init__(self, snake, length, width):
+
+    def __init__(self, snake, length, width, food_max=1, seed=None):
+        # TODO(matthew-c21): Add RNG seed for food generation.
         self.length = length
         self.width = width
         self.snake = snake
-        self.food_max = 1
+        self.food_max = food_max
         self.food_items = []
         self.previous_position = snake.head().pos
         self.score = 0
         self.state_flag = True
+        self.seed = seed if seed is not None else np.random.randint(2 ** 32)  # Hardcoded value for maximum seed.
         self._update_food()
 
     # TODO(matthew-c21): Have the board generate it's own snake given a relative size and initial facing direction.
@@ -107,6 +108,7 @@ class GameState:
         if not self.state_flag:
             return
 
+        self.seed += direction[0] * 10 + direction[1]
         self._update_food()
 
         direction = self.snake.fix_dir(direction)
@@ -126,6 +128,7 @@ class GameState:
             self.state_flag = False
 
     def _update_food(self):
+        np.random.seed(self.seed)
         while len(self.food_items) < self.food_max:
             # TODO(matthew-c21) - Optimize the selection algorithm to avoid possible slowdowns.
             # 100 is just a hard-coded value for all food items.
@@ -137,11 +140,6 @@ class GameState:
 
     def _out_of_bounds(self, position):
         return not (0 < position[0] < self.width and 0 < position[1] < self.length)
-
-    def set_food(self, new_food):
-        """Manually set the location of all food on screen, either for debugging or replay purposes."""
-        # TODO(matthew-c21): Validate the new food inputs.
-        self.food_items = new_food
 
     def score(self):
         return self.score
@@ -171,3 +169,6 @@ class GameState:
             matrix[y, x] = food.value
 
         return matrix
+
+    def get_seed(self):
+        return self.seed

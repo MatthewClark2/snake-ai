@@ -10,6 +10,20 @@ def assert_snake_has_position(snake, position):
 
 # TODO(matthew-c21) - Add test code for eating.
 class CoreTest(unittest.TestCase):
+    # TODO(matthew-c21): The matrix representation of the game state may be simplified in the future meaning that this
+    #  test will have to be changed.
+    def _check_matrix(self, snake, state_matrix, food=[]):
+        # This is a lot of logic required for testing, but it beats having to hardcode an explicit matrix when there's
+        # no specification for the state given that's any clearer than what's given here.
+        for i in range(10):
+            for j in range(10):
+                if snake.intersects(np.array([i, j])):  # Note that positions are x,y, but matrix access is y,x.
+                    self.assertTrue(state_matrix[j, i] < -1)
+                elif any((f.pos == [i, j]).all() for f in food):
+                    self.assertGreater(state_matrix[j, i], 0)
+                else:
+                    self.assertTrue(-1 <= state_matrix[j, i] <= 0)
+
     def test_snake_creation_up(self):
         pos = [np.array(x) for x in [(5, 5), (5, 6), (5, 7)]]
         snake = core.Snake(pos[0], 3, core.UP)
@@ -141,25 +155,13 @@ class CoreTest(unittest.TestCase):
 
         assert_snake_has_position(snake, [[0, 1], [1, 1], [2, 1]])
 
-    # TODO(matthew-c21): The matrix representation of the game state may be simplified in the future meaning that this
-    #  test will have to be changed.
     def test_state_matrix_correct(self):
         snake = core.Snake(np.array([5, 5]), 3, core.RIGHT)
         state = core.GameState(snake, 10, 10)
 
         matrix = state.to_matrix()
         food = state.food()
-
-        # This is a lot of logic required for testing, but it beats having to hardcode an explicit matrix when there's
-        # no specification for the state given that's any clearer than what's given here.
-        for i in range(10):
-            for j in range(10):
-                if snake.intersects(np.array([i, j])):  # Note that positions are x,y, but matrix access is y,x.
-                    self.assertTrue(matrix[j, i] < -1)
-                elif any((f.pos == [i, j]).all() for f in food):
-                    self.assertGreater(matrix[j, i], 0)
-                else:
-                    self.assertTrue(-1 <= matrix[j, i] <= 0)
+        self._check_matrix(snake, matrix, food)
 
     def test_board_does_not_make_changes_after_game_over(self):
         snake = core.Snake(np.array([1, 1]), 1, core.LEFT)
@@ -174,6 +176,25 @@ class CoreTest(unittest.TestCase):
             state.update(core.LEFT)
 
         assert_snake_has_position(snake, [[0, 1]])
+
+    def test_multiple_legal_moves(self):
+        snake = core.Snake(np.array([5, 5]), 3, core.LEFT)
+        state = core.GameState(snake, 10, 10, 0)
+
+        self.assertTrue(state.is_playable())
+        snake.move(core.LEFT)
+        self.assertTrue(state.is_playable())
+        snake.move(core.UP)
+        self.assertTrue(state.is_playable())
+        snake.move(core.RIGHT)
+        self.assertTrue(state.is_playable())
+        snake.move(core.UP)
+        self.assertTrue(state.is_playable())
+
+        assert_snake_has_position(snake, [[5, 3], [5, 4], [4, 4]])
+
+        matrix = state.to_matrix()
+        self._check_matrix(snake, matrix)
 
 
 if __name__ == '__main__':

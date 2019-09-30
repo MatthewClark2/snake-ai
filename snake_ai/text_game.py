@@ -1,5 +1,6 @@
-import core
 import curses
+
+import core
 from render import TerminalRenderer
 
 
@@ -23,7 +24,7 @@ def main(*args):
     game_playable = True
     length = 10
     width = 10
-    snake = core.Snake((width//2, length//2), width // 4, init_dir)
+    snake = core.Snake((width // 2, length // 2), width // 4, init_dir)
     state = core.GameState(snake, length, width)
     renderer = TerminalRenderer()
 

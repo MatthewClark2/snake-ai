@@ -1,9 +1,10 @@
-from keras.optimizers import Adam
-from keras.models import Sequential
-from keras.layers.core import Dense, Dropout
 import random
+
 import numpy as np
 import pandas as pd
+from keras.layers.core import Dense, Dropout
+from keras.models import Sequential
+from keras.optimizers import Adam
 
 
 # TODO(matthew-c21) - Hook up this model so it may be trained.
