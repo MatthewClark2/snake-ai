@@ -1,6 +1,6 @@
 import core
 import curses
-from curses_render import TerminalRenderer
+from render import TerminalRenderer
 
 
 def convert(keycode, default=None):
@@ -34,15 +34,15 @@ def main(*args):
     # A do-while loop would be nice here.
     renderer.render(state)
 
-    input_dir = convert(renderer.getKey(), init_dir)
+    input_dir = convert(renderer.get_key(), init_dir)
 
     while game_playable:
         game_playable = state.update(input_dir)
         renderer.render(state)
-        input_dir = convert(renderer.getKey(), input_dir)
+        input_dir = convert(renderer.get_key(), input_dir)
 
     renderer.render(state)
-    renderer.getKey()  # Wait for a keypress to end the game.
+    renderer.get_key()  # Wait for a keypress to end the game.
     renderer.close()
 
 

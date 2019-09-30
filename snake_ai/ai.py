@@ -4,7 +4,6 @@ from keras.layers.core import Dense, Dropout
 import random
 import numpy as np
 import pandas as pd
-from operator import add
 
 
 # TODO(matthew-c21) - Hook up this model so it may be trained.
@@ -22,7 +21,6 @@ class Agent:
         self.actual = []
         self.memory = []
 
-
     def get_state(self, board, snake):
         state = np.zeros((board.width, board.length))
 
@@ -34,16 +32,14 @@ class Agent:
 
         return state
 
-
     def set_reward(self, board, snake):
         # TODO(matthew-c21) - Ensure that the GameState class has this method or an equivalent.
-        if board.in_terminal_state():
-            self.reward -= 10
+        if not board.is_playable():
+            self.reward -= 100
         elif snake.head.has_eaten:
             self.reward += 10
 
         return self.reward
-
 
     def network(self, weights=None):
         # Shamelessly stolen from https://github.com/maurock/snake-ga/blob/master/DQN.py.
@@ -62,10 +58,8 @@ class Agent:
             model.load_weights(weights)
         return model
 
-
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
-
 
     def replay_new(self, memory):
         if len(memory) > 1000:
@@ -80,7 +74,6 @@ class Agent:
             target_f[0][np.argmax(action)] = target
             self.model.fit(np.array([state]), target_f, epochs=1, verbose=0)
 
-
     def train_short_memory(self, state, action, reward, next_state, done):
         target = reward
         if not done:
@@ -88,5 +81,3 @@ class Agent:
         target_f = self.model.predict(state.reshape((1, 11)))
         target_f[0][np.argmax(action)] = target
         self.model.fit(state.reshape((1, 11)), target_f, epochs=1, verbose=0)
-
-# Main loop
