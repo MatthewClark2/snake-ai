@@ -51,7 +51,11 @@ def main(*args):
     width = 20
     dim = (length + 1) * (width + 1)
     init_dir = core.LEFT
+
+    # TODO(matthew-c21): Provide a way to only show some games, or just replay decent ones from a training session.
     rendering = True
+    moves_per_second = 2  # This seems to be the fastest that the training can be done without notable slowdowns.
+    base_delay = 1 / moves_per_second
 
     renderer = None
     if rendering:
@@ -64,11 +68,7 @@ def main(*args):
         state = core.GameState(snake, length, width)
 
         while state.is_playable():
-            if rendering:
-                # TODO(matthew-c21): Enable rendering with a command line flag.
-                renderer.render(state, i)
-                # TODO(matthew-c21): Update sleep delay in order to reduce stuttering.
-                time.sleep(0.25)
+            loop_start = time.time()
 
             # TODO(matthew-c21): Consider limiting the time the model can go without eating.
             #  May need to implement in GameState.
@@ -92,12 +92,14 @@ def main(*args):
             reward = determine_reward(old_state, new_state, state.is_playable())
 
             agent.set_reward(reward)
-
-            # TODO(matthew-c21): Consider training between games rather than on every move. This allows for a full test
-            #  of a given set of weights rather than shuffling them every time.
             agent.train_short_memory(old_col, move, reward, new_col, state.is_playable())
-
             agent.remember(old_col, move, reward, new_col, state.is_playable())
+
+            # TODO(matthew-c21): Enable rendering with a command line flag.
+            if rendering:
+                renderer.render(state, i)
+                elapsed_time = time.time() - loop_start
+                time.sleep(base_delay - elapsed_time % base_delay)
 
         agent.replay_new()
 
