@@ -40,15 +40,15 @@ def determine_reward(old_state, new_state, playable, movement_reward=0):
     return movement_reward
 
 
-def to_move(move):
-    if move[0] == 1:
-        return core.UP
-    elif move[1] == 1:
-        return core.DOWN
-    elif move[2] == 1:
-        return core.LEFT
-    else:
-        return core.RIGHT
+def to_move(move, facing):
+    if move == 0:
+        return facing
+    elif move == 1:
+        x, y = facing
+        return np.array([-y, x])  # Left rotation
+    elif move == 2:
+        x, y = facing
+        return np.array([y, -x])  # Right rotation
 
 
 def reshape(matrix):
@@ -88,6 +88,8 @@ def main(args=None):
 
     agent = ai.DefaultAgent(dim)
 
+    facing = init_dir
+
     for i in range(1, n + 1):  # Number games from 1 to simplify math.
         rendering = games_shown != 0 and i % games_shown == 0
 
@@ -97,29 +99,27 @@ def main(args=None):
         while state.is_playable():
             loop_start = time.time()
 
-            # TODO(matthew-c21): Consider limiting the time the model can go without eating.
-            #  May need to implement in GameState.
             # Decrease epsilon over time.
-            agent.set_epsilon(100 - i)
+            agent.set_epsilon(2 * n / 3 - i)
 
             old_state = state.to_matrix()
             old_col = reshape(old_state)
 
             if np.random.randint(MAX_EPSILON) < agent.epsilon:
-                move = keras.utils.to_categorical(np.random.randint(4), num_classes=4)
+                move = np.random.randint(3)
             else:
-                prediction = agent.make_choice(old_col)
-                move = keras.utils.to_categorical(prediction, num_classes=4)[0][0]
+                prediction = agent.make_choice(old_col)[0]
+                move = max(range(len(prediction)), key=lambda j: prediction[j])
 
-            move = to_move(move)
+            move = to_move(move, facing)
             state.update(move)
 
             new_state = state.to_matrix()
             new_col = reshape(new_state)
-            reward = -determine_reward(old_state, new_state, state.is_playable(), move_value)
+            reward = determine_reward(old_state, new_state, state.is_playable(), move_value)
 
-            agent.train_short_memory(old_col, move, reward, new_col, state.is_playable())
             agent.remember(old_col, move, reward, new_col, state.is_playable())
+            agent.train_short_memory(old_col, move, reward, new_col, state.is_playable())
 
             if rendering:
                 renderer.render(state, i)

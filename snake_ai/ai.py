@@ -2,6 +2,7 @@ import random
 from abc import ABC, abstractmethod
 
 import numpy as np
+from keras.layers import Flatten
 from keras.layers.core import Dense, Dropout
 from keras.models import Sequential
 from keras.optimizers import Adam
@@ -114,7 +115,7 @@ class DefaultAgent(Agent):
         model.add(Dropout(0.5))
         model.add(Dense(units=256, activation='relu'))
         model.add(Dropout(0.5))
-        model.add(Dense(units=4, activation='softmax'))
+        model.add(Dense(units=3, activation='softmax'))
         opt = Adam(learning_rate)
         model.compile(loss='mse', optimizer=opt)
 
