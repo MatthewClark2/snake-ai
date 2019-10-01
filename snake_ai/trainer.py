@@ -20,6 +20,7 @@ def parse_args(args):
     parser.add_argument('--count', default=10, type=int, dest='count')
     parser.add_argument('--init-dir', default='left', dest='init_dir', choices=['up', 'down', 'left', 'right'])
     parser.add_argument('--speed', default=2, type=int, dest='speed')
+    parser.add_argument('--punish-movement', action='store_true', default=False, dest='punish_movement')
 
     return parser.parse_args(args)
 
@@ -70,6 +71,8 @@ def main(args=None):
         'right': core.RIGHT,
     }[args.init_dir]
 
+    move_value = 1 if args.punish_movement else 0
+
     # Shows one game per every games_shown games.
     games_shown = args.display
 
@@ -84,7 +87,7 @@ def main(args=None):
 
     agent = ai.DefaultAgent(dim)
 
-    for i in range(n):
+    for i in range(1, n + 1):  # Number games from 1 to simplify math.
         rendering = games_shown != 0 and i % games_shown == 0
 
         snake = core.Snake((width // 2, length // 2), length // 4, init_dir)
@@ -112,7 +115,7 @@ def main(args=None):
 
             new_state = state.to_matrix()
             new_col = reshape(new_state)
-            reward = determine_reward(old_state, new_state, state.is_playable())
+            reward = determine_reward(old_state, new_state, state.is_playable(), move_value)
 
             agent.set_reward(reward)
             agent.train_short_memory(old_col, move, reward, new_col, state.is_playable())
