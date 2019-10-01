@@ -80,6 +80,7 @@ def main(args=None):
     base_delay = 1 / moves_per_second
 
     dim = (length + 1) * (width + 1)
+    max_drought = length * width
 
     renderer = None
     if games_shown != 0:
@@ -91,7 +92,7 @@ def main(args=None):
         rendering = games_shown != 0 and i % games_shown == 0
 
         snake = core.Snake((width // 2, length // 2), length // 4, init_dir)
-        state = core.GameState(snake, length, width)
+        state = core.GameState(snake, length, width, max_drought=max_drought)
 
         while state.is_playable():
             loop_start = time.time()
@@ -115,9 +116,8 @@ def main(args=None):
 
             new_state = state.to_matrix()
             new_col = reshape(new_state)
-            reward = determine_reward(old_state, new_state, state.is_playable(), move_value)
+            reward = -determine_reward(old_state, new_state, state.is_playable(), move_value)
 
-            agent.set_reward(reward)
             agent.train_short_memory(old_col, move, reward, new_col, state.is_playable())
             agent.remember(old_col, move, reward, new_col, state.is_playable())
 
@@ -128,7 +128,10 @@ def main(args=None):
 
         agent.replay_new()
 
-    renderer.close()
+    if games_shown != 0:
+        renderer.close()
+
+    print(agent.dump_weights())
 
 
 if __name__ == '__main__':

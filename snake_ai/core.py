@@ -85,7 +85,7 @@ class GameState:
 
     No internal walls, outer perimeter acts as border, only one food item on screen at a time."""
 
-    def __init__(self, snake, length, width, food_max=1, seed=None):
+    def __init__(self, snake, length, width, food_max=1, seed=None, max_drought=np.Inf):
         self.length = length
         self.width = width
         self.snake = snake
@@ -93,6 +93,8 @@ class GameState:
         self.food_items = []
         self.previous_position = snake.head().pos
         self.score = 0
+        self.max_drought = max_drought
+        self.turn_count = 0
         self.state_flag = True
         self.seed = seed if seed is not None else np.random.randint(2 ** 32)  # Hardcoded value for maximum seed.
         self._update_food()
@@ -104,6 +106,8 @@ class GameState:
 
         if not self.state_flag:
             return
+
+        self.turn_count += 1
 
         has_eaten = False
 
@@ -131,7 +135,8 @@ class GameState:
         self._update_food()
 
         if self.snake.intersects(updated_position, 1) or \
-                GameState._out_of_bounds(self.width, self.length, updated_position):
+                GameState._out_of_bounds(self.width, self.length, updated_position) or \
+                self.turn_count > self.max_drought:
             self.state_flag = False
 
     def _update_food(self):

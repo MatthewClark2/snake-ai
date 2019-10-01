@@ -1,4 +1,6 @@
 import unittest
+from itertools import cycle
+
 import numpy as np
 import snake_ai.core as core
 
@@ -228,6 +230,32 @@ class CoreTest(unittest.TestCase):
             state.update(core.LEFT)
 
         self.assertEqual(3, len(snake))
+
+    def test_game_state_does_not_degrade_normally(self):
+        snake = core.Snake(np.array([5, 5]), 1, core.LEFT)
+        state = core.GameState(snake, 10, 10, food_max=0)
+
+        # Execute 1,000 moves to check against a drought.
+        for i in range(250):
+            state.update(core.DOWN)
+            state.update(core.RIGHT)
+            state.update(core.UP)
+            state.update(core.LEFT)
+
+        self.assertTrue(state.is_playable())
+
+    def test_game_state_becomes_invalid_after_drought(self):
+        snake = core.Snake(np.array([5, 5]), 1, core.LEFT)
+        state = core.GameState(snake, 10, 10, food_max=0, max_drought=10)
+
+        moves = cycle([core.DOWN, core.RIGHT, core.UP, core.LEFT])
+        for _ in range(10):
+            move = next(moves)
+            state.update(move)
+            self.assertTrue(state.is_playable())
+
+        state.update(core.UP)
+        self.assertFalse(state.is_playable())
 
 
 if __name__ == '__main__':

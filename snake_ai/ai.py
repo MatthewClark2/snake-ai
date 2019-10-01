@@ -18,14 +18,6 @@ class Agent(ABC):
         pass
 
     @abstractmethod
-    def set_reward(self, reward):
-        """Reward or punish the agent for the resulting decision.
-
-        :param reward an integer representing the reward for an action. Negative values are considered punishments.
-            Larger magnitudes correspond to more strongly weighted rewards."""
-        pass
-
-    @abstractmethod
     def dump_weights(self):
         """Output a list of weights that affect the decision making process."""
         pass
@@ -55,9 +47,6 @@ class RandomAgent(Agent):
     def make_choice(self, game_state):
         return np.random.randint(4)
 
-    def set_reward(self, reward):
-        pass
-
     def dump_weights(self):
         pass
 
@@ -75,13 +64,9 @@ class DefaultAgent(Agent):
         self.learning_rate = learning_rate
         self.epsilon = epsilon
         self.gamma = gamma
-        self.reward = 0
         self.memory = []
         self.short_memory = np.array([])
         self.model = DefaultAgent._network(learning_rate, input_dim, weights=weights)
-
-    def set_reward(self, reward):
-        self.reward = reward
 
     def make_choice(self, game_state):
         # TODO(matthew-c21): Determine if more configuration needed.
@@ -125,12 +110,10 @@ class DefaultAgent(Agent):
         # Shamelessly stolen from https://github.com/maurock/snake-ga/blob/master/DQN.py.
         # TODO(matthew-c21): Determine how output_dim affects model.
         model = Sequential()
-        model.add(Dense(units=input_dim, activation='relu', input_dim=input_dim))
-        model.add(Dropout(0.15))
-        model.add(Dense(units=input_dim, activation='relu'))
-        model.add(Dropout(0.15))
-        model.add(Dense(units=input_dim, activation='relu'))
-        model.add(Dropout(0.15))
+        model.add(Dense(units=512, activation='relu', input_dim=input_dim))
+        model.add(Dropout(0.5))
+        model.add(Dense(units=256, activation='relu'))
+        model.add(Dropout(0.5))
         model.add(Dense(units=4, activation='softmax'))
         opt = Adam(learning_rate)
         model.compile(loss='mse', optimizer=opt)
