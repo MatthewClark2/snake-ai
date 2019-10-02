@@ -144,7 +144,7 @@ class GameState:
         while len(self.food_items) < self.food_max:
             # TODO(matthew-c21) - Optimize the selection algorithm to avoid possible slowdowns.
             # 100 is just a hard-coded value for all food items.
-            new_food = _food_item(np.array([np.random.randint(1, n) for n in (self.width, self.length)]), 100)
+            new_food = _food_item(np.array([np.random.randint(1, n) for n in (self.width, self.length)]), 1)
             if self.snake.intersects(new_food.pos):
                 continue
 

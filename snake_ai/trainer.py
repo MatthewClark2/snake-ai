@@ -25,6 +25,13 @@ def parse_args(args):
 
 
 def determine_reward(old_state, new_state, playable, min_distance=None):
+    """Determines a reward in the range [-1, 1]. Eating returns 1, while dying returns -1. Any other rewards are based
+    on the distance to the nearest food item.
+
+    :param old_state the state before the move was taken.
+    :param new_state the state of the game after a move was taken.
+    :param playable boolean determining whether or not the new state is playable.
+    :param min_distance a value in [0, 1) determining how close the nearest food item is."""
     # Punish game over.
     if not playable:
         return -100
@@ -86,9 +93,10 @@ def main(args=None):
     if games_shown != 0:
         renderer = TerminalRenderer()
 
-    agent = ai.DefaultAgent(dim)
+    agent = ai.DefaultAgent(dim, gamma=0.25)
 
     facing = init_dir
+    max_distance = np.sqrt(length ** 2 + width ** 2)
 
     for i in range(1, n + 1):  # Number games from 1 to simplify math.
         rendering = games_shown != 0 and i % games_shown == 0
@@ -102,7 +110,7 @@ def main(args=None):
             loop_start = time.time()
 
             # Decrease epsilon over time.
-            agent.set_epsilon(MAX_EPSILON - i)
+            agent.set_epsilon(MAX_EPSILON/4 - i)
 
             old_state = state.to_matrix()
             old_col = reshape(old_state)
@@ -121,7 +129,8 @@ def main(args=None):
 
             new_state = state.to_matrix()
             new_col = reshape(new_state)
-            reward = determine_reward(old_state, new_state, state.is_playable(), state.min_distance_to_food())
+            scaled_distance = state.min_distance_to_food() / max_distance
+            reward = determine_reward(old_state, new_state, state.is_playable(), scaled_distance)
 
             logging.info('Reward for move: ' + str(reward))
 
