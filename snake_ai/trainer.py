@@ -46,7 +46,7 @@ def determine_reward(old_state, new_state, playable, min_distance=None):
     if min_distance is None:
         return 0
 
-    return 0.5-min_distance
+    return -min_distance
 
 
 def to_move(move, facing):
@@ -101,7 +101,7 @@ def main(args=None):
     if games_shown != 0:
         renderer = TerminalRenderer()
 
-    agent = ai.DefaultAgent(dim, gamma=0.25)
+    agent = ai.DefaultAgent(dim)
 
     facing = init_dir
     max_distance = np.sqrt(length ** 2 + width ** 2)
@@ -118,7 +118,7 @@ def main(args=None):
             loop_start = time.time()
 
             # Decrease epsilon over time.
-            agent.set_epsilon(MAX_EPSILON/4 - i)
+            agent.set_epsilon(MAX_EPSILON/2 - i)
 
             old_state = state.to_matrix()
             old_col = reshape(old_state)
@@ -159,7 +159,7 @@ def main(args=None):
 
 if __name__ == '__main__':
     # Overwrite the logfile every time that training begins.
-    logging.basicConfig(filename='training.log', filemode='w', level=logging.INFO)
+    logging.basicConfig(filename='training.log', filemode='w', level=logging.WARN)
     logging.info('Starting training.')
 
     main(sys.argv[1:])

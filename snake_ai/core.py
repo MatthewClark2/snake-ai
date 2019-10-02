@@ -107,6 +107,7 @@ class GameState:
         if not self.state_flag:
             return
 
+        # TODO(matthew-c21): Reset turn count after eating. Add corresponding tests.
         self.turn_count += 1
 
         has_eaten = False
@@ -188,7 +189,8 @@ class GameState:
         return matrix
 
     def min_distance_to_food(self):
-        # TODO(matthew-c21): Strictly test this method by setting food manually.
+        # TODO(matthew-c21): Return both the scalar and vector. Prepend the vector to the linearized matrix
+        #  representation.
         distances = []
         for food in self.food_items:
             distances.append(np.linalg.norm(self.snake.head().pos - food.pos))
