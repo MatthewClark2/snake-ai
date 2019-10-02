@@ -2,7 +2,6 @@ import argparse
 import sys
 import time
 
-import keras
 import numpy as np
 import tensorflow.compat.v1 as tf
 
@@ -25,7 +24,7 @@ def parse_args(args):
     return parser.parse_args(args)
 
 
-def determine_reward(old_state, new_state, playable, movement_reward=0):
+def determine_reward(old_state, new_state, playable, movement_reward=0, min_distance=None):
     # Punish game over.
     if not playable:
         return -100
@@ -37,7 +36,7 @@ def determine_reward(old_state, new_state, playable, movement_reward=0):
                 return old_state[y, x]
 
     # Reward or punish survival.
-    return movement_reward
+    return -min_distance
 
 
 def to_move(move, facing):
@@ -120,7 +119,8 @@ def main(args=None, logfile=None):
 
             new_state = state.to_matrix()
             new_col = reshape(new_state)
-            reward = determine_reward(old_state, new_state, state.is_playable(), move_value)
+            reward = determine_reward(old_state, new_state, state.is_playable(), move_value,
+                                      state.min_distance_to_food())
 
             agent.remember(old_col, move, reward, new_col, state.is_playable())
             agent.train_short_memory(old_col, move, reward, new_col, state.is_playable())

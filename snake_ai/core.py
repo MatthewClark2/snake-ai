@@ -183,5 +183,13 @@ class GameState:
 
         return matrix
 
+    def min_distance_to_food(self):
+        # TODO(matthew-c21): Strictly test this method by setting food manually.
+        distances = []
+        for food in self.food_items:
+            distances.append(np.linalg.norm(self.snake.head().pos - food.pos))
+
+        return min(distances)
+
     def get_seed(self):
         return self.seed
