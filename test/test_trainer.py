@@ -58,3 +58,34 @@ class TrainerTest(unittest.TestCase):
         new_state = state.to_matrix()
 
         self.assertGreater(-1, trainer.determine_reward(old_state, new_state, state.is_playable()))
+
+    def test_move_conversion_up(self):
+        move = core.UP
+
+        np.testing.assert_array_equal(core.UP, trainer.to_move(0, move))
+        np.testing.assert_array_equal(core.LEFT, trainer.to_move(1, move))
+        np.testing.assert_array_equal(core.RIGHT, trainer.to_move(2, move))
+
+    def test_move_conversion_down(self):
+        move = core.DOWN
+
+        np.testing.assert_array_equal(core.DOWN, trainer.to_move(0, move))
+        np.testing.assert_array_equal(core.RIGHT, trainer.to_move(1, move))
+        np.testing.assert_array_equal(core.LEFT, trainer.to_move(2, move))
+
+    def test_move_conversion_left(self):
+        move = core.LEFT
+
+        np.testing.assert_array_equal(core.LEFT, trainer.to_move(0, move))
+        np.testing.assert_array_equal(core.DOWN, trainer.to_move(1, move))
+        np.testing.assert_array_equal(core.UP, trainer.to_move(2, move))
+
+    def test_move_conversion_right(self):
+        move = core.RIGHT
+
+        np.testing.assert_array_equal(core.RIGHT, trainer.to_move(0, move))
+        np.testing.assert_array_equal(core.UP, trainer.to_move(1, move))
+        np.testing.assert_array_equal(core.DOWN, trainer.to_move(2, move))
+
+    def test_move_conversion_oob(self):
+        self.assertIsNone(trainer.to_move(3, core.UP))

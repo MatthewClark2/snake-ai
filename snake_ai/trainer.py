@@ -34,7 +34,7 @@ def determine_reward(old_state, new_state, playable, min_distance=None):
     :param min_distance a value in [0, 1) determining how close the nearest food item is."""
     # Punish game over.
     if not playable:
-        return -100
+        return -1
 
     # Reward eating.
     for y, row in enumerate(old_state - new_state):
@@ -46,18 +46,26 @@ def determine_reward(old_state, new_state, playable, min_distance=None):
     if min_distance is None:
         return 0
 
-    return -min_distance
+    return 0.5-min_distance
 
 
 def to_move(move, facing):
+    """Determines the absolute direction of motion given a relative movement and facing direction.
+    :param move an integer corresponding to the relative motion of the snake.
+        - 0 is straight.
+        - 1 is left.
+        - 2 is right
+        Other values are considered to be undefined.
+    :param facing one of UP, DOWN, LEFT, or RIGHT from the `snake_ai.core` module.
+    :returns the absolute direction after applying the given relative motion."""
     if move == 0:
         return facing
     elif move == 1:
         x, y = facing
-        return np.array([-y, x])  # Left rotation
+        return np.array([y, -x])  # Left rotation
     elif move == 2:
         x, y = facing
-        return np.array([y, -x])  # Right rotation
+        return np.array([-y, x])  # Right rotation
 
 
 def reshape(matrix):
@@ -125,6 +133,7 @@ def main(args=None):
                 logging.info('Predicted: ' + str(move))
 
             move = to_move(move, facing)
+            facing = move
             state.update(move)
 
             new_state = state.to_matrix()
