@@ -1,4 +1,5 @@
 import argparse
+import logging
 import sys
 import time
 
@@ -54,7 +55,7 @@ def reshape(matrix):
     return matrix.reshape((1, -1))
 
 
-def main(args=None, logfile=None):
+def main(args=None):
     # Suppress all non-vital tensorflow warnings.
     tf.logging.set_verbosity(tf.logging.ERROR)
 
@@ -95,7 +96,7 @@ def main(args=None, logfile=None):
         snake = core.Snake((width // 2, length // 2), length // 4, init_dir)
         state = core.GameState(snake, length, width, max_drought=max_drought)
 
-        print('Game ' + str(i), file=logfile)
+        logging.info('Starting game ' + str(i))
 
         while state.is_playable():
             loop_start = time.time()
@@ -108,11 +109,12 @@ def main(args=None, logfile=None):
 
             if np.random.randint(MAX_EPSILON) < agent.epsilon:
                 move = np.random.randint(3)
+                logging.info('Generated: ' + str(move))
             else:
                 prediction = agent.make_choice(old_col)[0]
                 move = max(range(len(prediction)), key=lambda j: prediction[j])
 
-                print(move, file=logfile)
+                logging.info('Predicted: ' + str(move))
 
             move = to_move(move, facing)
             state.update(move)
@@ -121,6 +123,8 @@ def main(args=None, logfile=None):
             new_col = reshape(new_state)
             reward = determine_reward(old_state, new_state, state.is_playable(), move_value,
                                       state.min_distance_to_food())
+
+            logging.info('Reward for move: ' + str(reward))
 
             agent.remember(old_col, move, reward, new_col, state.is_playable())
             agent.train_short_memory(old_col, move, reward, new_col, state.is_playable())
@@ -135,9 +139,10 @@ def main(args=None, logfile=None):
     if games_shown != 0:
         renderer.close()
 
-    print(agent.dump_weights())
-
 
 if __name__ == '__main__':
-    with open('training.log', 'w') as logfile:
-        main(sys.argv[1:], logfile)
+    # Overwrite the logfile every time that training begins.
+    logging.basicConfig(filename='training.log', filemode='w', level=logging.INFO)
+    logging.info('Starting training.')
+
+    main(sys.argv[1:])
