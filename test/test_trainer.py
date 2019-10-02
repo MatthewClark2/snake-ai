@@ -18,7 +18,8 @@ class TrainerTest(unittest.TestCase):
             state.update(core.UP)
             new_state = state.to_matrix()
 
-        self.assertLess(0, trainer.determine_reward(old_state, new_state, state.is_playable()))
+        actual_reward = trainer.determine_reward(old_state, new_state, state.is_playable())
+        self.assertLess(0, actual_reward)
 
     def test_punishes_game_over(self):
         snake = core.Snake(np.array([5, 5]), 2, core.LEFT)
@@ -34,7 +35,7 @@ class TrainerTest(unittest.TestCase):
         self.assertFalse(state.is_playable())
         self.assertGreater(-1, trainer.determine_reward(old_state, new_state, state.is_playable()))
 
-    def test_sets_movement_punishment(self):
+    def test_not_eating_gives_negative_distance(self):
         snake = core.Snake(np.array([5, 5]), 2, core.LEFT)
         state = core.GameState(snake, 10, 10, seed=10)
 
@@ -42,8 +43,8 @@ class TrainerTest(unittest.TestCase):
         state.update(core.UP)
         new_state = state.to_matrix()
 
-        self.assertEqual(0, trainer.determine_reward(old_state, new_state, state.is_playable()))
-        self.assertEqual(-1, trainer.determine_reward(old_state, new_state, state.is_playable(), movement_reward=-1))
+        # snake at (5, 4). Food at (5, 1).
+        self.assertEqual(-3.0, trainer.determine_reward(old_state, new_state, True, state.min_distance_to_food()))
 
     def test_punish_self_intersection(self):
         snake = core.Snake(np.array([5, 5]), 5, core.LEFT)

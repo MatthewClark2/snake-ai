@@ -20,12 +20,11 @@ def parse_args(args):
     parser.add_argument('--count', default=10, type=int, dest='count')
     parser.add_argument('--init-dir', default='left', dest='init_dir', choices=['up', 'down', 'left', 'right'])
     parser.add_argument('--speed', default=2, type=int, dest='speed')
-    parser.add_argument('--punish-movement', action='store_true', default=False, dest='punish_movement')
 
     return parser.parse_args(args)
 
 
-def determine_reward(old_state, new_state, playable, movement_reward=0, min_distance=None):
+def determine_reward(old_state, new_state, playable, min_distance=None):
     # Punish game over.
     if not playable:
         return -100
@@ -37,6 +36,9 @@ def determine_reward(old_state, new_state, playable, movement_reward=0, min_dist
                 return old_state[y, x]
 
     # Reward or punish survival.
+    if min_distance is None:
+        return 0
+
     return -min_distance
 
 
@@ -71,8 +73,6 @@ def main(args=None):
         'right': core.RIGHT,
     }[args.init_dir]
 
-    move_value = 1 if args.punish_movement else 0
-
     # Shows one game per every games_shown games.
     games_shown = args.display
 
@@ -94,7 +94,7 @@ def main(args=None):
         rendering = games_shown != 0 and i % games_shown == 0
 
         snake = core.Snake((width // 2, length // 2), length // 4, init_dir)
-        state = core.GameState(snake, length, width, max_drought=max_drought)
+        state = core.GameState(snake, length, width, max_drought=max_drought, food_max=5)
 
         logging.info('Starting game ' + str(i))
 
@@ -102,7 +102,7 @@ def main(args=None):
             loop_start = time.time()
 
             # Decrease epsilon over time.
-            agent.set_epsilon(2 * n / 3 - i)
+            agent.set_epsilon(MAX_EPSILON - i)
 
             old_state = state.to_matrix()
             old_col = reshape(old_state)
@@ -121,8 +121,7 @@ def main(args=None):
 
             new_state = state.to_matrix()
             new_col = reshape(new_state)
-            reward = determine_reward(old_state, new_state, state.is_playable(), move_value,
-                                      state.min_distance_to_food())
+            reward = determine_reward(old_state, new_state, state.is_playable(), state.min_distance_to_food())
 
             logging.info('Reward for move: ' + str(reward))
 

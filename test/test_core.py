@@ -257,6 +257,41 @@ class CoreTest(unittest.TestCase):
         state.update(core.UP)
         self.assertFalse(state.is_playable())
 
+    def test_multiple_food_items(self):
+        snake = core.Snake(np.array([5, 5]), 1, core.RIGHT)
+        state = core.GameState(snake, 10, 10, food_max=5)
+
+        self.assertEqual(5, len(state.food()))
+
+        state.update(core.RIGHT)
+        self.assertEqual(5, len(state.food()))
+
+    def test_food_regenerated_upon_eating(self):
+        snake = core.Snake(np.array([5, 5]), 1, core.RIGHT)
+        state = core.GameState(snake, 10, 10, seed=10, food_max=5)
+
+        self.assertEqual(5, len(state.food()))
+
+        for _ in range(4):
+            state.update(core.UP)
+
+        self.assertEqual(5, len(state.food()))
+
+    def test_setting_food_items_persistent(self):
+        snake = core.Snake(np.array([5, 5]), 1, core.RIGHT)
+        state = core.GameState(snake, 10, 10, food_max=5)
+        food = core._food_item(np.array([6, 5]), 100)
+
+        state.set_food([food])
+
+        self.assertEqual(5, len(state.food()))
+        self.assertTrue(any(x is food for x in state.food()))
+
+        state.update(core.RIGHT)
+
+        self.assertTrue(all(x is not food for x in state.food()))
+        self.assertEqual(5, len(state.food()))
+
 
 if __name__ == '__main__':
     unittest.main()

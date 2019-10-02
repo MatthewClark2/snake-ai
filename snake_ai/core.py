@@ -127,10 +127,10 @@ class GameState:
 
         # TODO(matthew-c21): Ensure that all food items have unique positions so this loop doesn't execute more than
         #  once. Consider a map using position tuples as keys.
-        for food in self.food_items:
+        for i, food in enumerate(self.food_items[::-1]):
             if self.snake.intersects(food.pos):
                 self.score += food.value
-                self.food_items.remove(food)
+                self.food_items = self.food_items[:self.food_max-i-1] + self.food_items[self.food_max-i:]
 
         self._update_food()
 
@@ -156,6 +156,10 @@ class GameState:
         if x <= 0 or x >= width or y <= 0 or y >= length:
             return True
         return False
+
+    def set_food(self, food):
+        self.food_items = food
+        self._update_food()
 
     def get_score(self):
         return self.score
