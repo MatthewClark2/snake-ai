@@ -55,7 +55,7 @@ def reshape(matrix):
     return matrix.reshape((1, -1))
 
 
-def main(args=None):
+def main(args=None, logfile=None):
     # Suppress all non-vital tensorflow warnings.
     tf.logging.set_verbosity(tf.logging.ERROR)
 
@@ -96,6 +96,8 @@ def main(args=None):
         snake = core.Snake((width // 2, length // 2), length // 4, init_dir)
         state = core.GameState(snake, length, width, max_drought=max_drought)
 
+        print('Game ' + str(i), file=logfile)
+
         while state.is_playable():
             loop_start = time.time()
 
@@ -110,6 +112,8 @@ def main(args=None):
             else:
                 prediction = agent.make_choice(old_col)[0]
                 move = max(range(len(prediction)), key=lambda j: prediction[j])
+
+                print(move, file=logfile)
 
             move = to_move(move, facing)
             state.update(move)
@@ -135,4 +139,5 @@ def main(args=None):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    with open('training.log', 'w') as logfile:
+        main(sys.argv[1:], logfile)

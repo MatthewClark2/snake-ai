@@ -182,3 +182,5 @@ dmypy.json
 
 scratch/
 notes/
+
+**/*.log
