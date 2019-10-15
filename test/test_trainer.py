@@ -33,7 +33,7 @@ class TrainerTest(unittest.TestCase):
         new_state = state.to_matrix()
 
         self.assertFalse(state.is_playable())
-        self.assertGreater(-1, trainer.determine_reward(old_state, new_state, state.is_playable()))
+        self.assertGreaterEqual(-1, trainer.determine_reward(old_state, new_state, state.is_playable()))
 
     def test_not_eating_gives_negative_distance(self):
         snake = core.Snake(np.array([5, 5]), 2, core.LEFT)
@@ -57,7 +57,7 @@ class TrainerTest(unittest.TestCase):
         state.update(core.UP)
         new_state = state.to_matrix()
 
-        self.assertGreater(-1, trainer.determine_reward(old_state, new_state, state.is_playable()))
+        self.assertGreaterEqual(-1, trainer.determine_reward(old_state, new_state, state.is_playable()))
 
     def test_move_conversion_up(self):
         move = core.UP

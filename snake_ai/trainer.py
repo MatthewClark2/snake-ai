@@ -10,7 +10,7 @@ import ai
 import core
 from render import TerminalRenderer
 
-MAX_EPSILON = 200  # Hardcoded value based on example code.
+MAX_EPSILON = 100  # Hardcoded value based on example code.
 
 
 def parse_args(args):
@@ -40,7 +40,7 @@ def determine_reward(old_state, new_state, playable, min_distance=None):
     for y, row in enumerate(old_state - new_state):
         for x, val in enumerate(row):
             if val > 0 and old_state[y, x] > 0:  # Head of snake occupies position where food used to be.
-                return old_state[y, x]
+                return 1  # old_state[y, x]
 
     # Reward or punish survival.
     if min_distance is None:
@@ -101,16 +101,20 @@ def main(args=None):
     if games_shown != 0:
         renderer = TerminalRenderer()
 
-    agent = ai.DefaultAgent(dim)
+    agent = ai.DefaultAgent((dim,))
 
     facing = init_dir
     max_distance = np.sqrt(length ** 2 + width ** 2)
+
+    high_score = 0
 
     for i in range(1, n + 1):  # Number games from 1 to simplify math.
         rendering = games_shown != 0 and i % games_shown == 0
 
         snake = core.Snake((width // 2, length // 2), length // 4, init_dir)
         state = core.GameState(snake, length, width, max_drought=max_drought, food_max=5)
+
+        prev_col = reshape(state.to_matrix())
 
         logging.info('Starting game ' + str(i))
 
@@ -120,14 +124,13 @@ def main(args=None):
             # Decrease epsilon over time.
             agent.set_epsilon(MAX_EPSILON/2 - i)
 
-            old_state = state.to_matrix()
-            old_col = reshape(old_state)
+            old_state = reshape(state.to_matrix())
 
             if np.random.randint(MAX_EPSILON) < agent.epsilon:
                 move = np.random.randint(3)
                 logging.info('Generated: ' + str(move))
             else:
-                prediction = agent.make_choice(old_col)[0]
+                prediction = agent.make_choice(np.vstack([prev_col, old_state]))[0]
                 move = max(range(len(prediction)), key=lambda j: prediction[j])
 
                 logging.info('Predicted: ' + str(move))
@@ -136,15 +139,19 @@ def main(args=None):
             facing = move
             state.update(move)
 
-            new_state = state.to_matrix()
-            new_col = reshape(new_state)
-            scaled_distance = state.min_distance_to_food() / max_distance
+            new_state = reshape(state.to_matrix())
+            scaled_distance = np.abs(state.min_distance_to_food()) / max_distance
             reward = determine_reward(old_state, new_state, state.is_playable(), scaled_distance)
+
+            prev_col = old_state
 
             logging.info('Reward for move: ' + str(reward))
 
-            agent.remember(old_col, move, reward, new_col, state.is_playable())
-            agent.train_short_memory(old_col, move, reward, new_col, state.is_playable())
+            agent.remember(np.vstack([prev_col, old_state]), move, reward,
+                           np.vstack([old_state, new_state]), state.is_playable())
+
+            agent.train_short_memory(np.vstack([prev_col, old_state]), move, reward,
+                                     np.vstack([old_state, new_state]), state.is_playable())
 
             if rendering:
                 renderer.render(state, i)
@@ -152,9 +159,12 @@ def main(args=None):
                 time.sleep(base_delay - elapsed_time % base_delay)
 
         agent.replay_new()
+        high_score = max(high_score, state.get_score())
 
     if games_shown != 0:
         renderer.close()
+
+    print('Max score achieved: ', high_score)
 
 
 if __name__ == '__main__':
