@@ -5,6 +5,7 @@ import time
 
 import numpy as np
 import tensorflow.compat.v1 as tf
+from keras.utils import to_categorical
 
 import ai
 import core
@@ -69,7 +70,7 @@ def to_move(move, facing):
 
 
 def reshape(matrix):
-    return matrix.reshape((1, -1))
+    return matrix  # .reshape((length, -1))
 
 
 def main(args=None):
@@ -94,14 +95,14 @@ def main(args=None):
     moves_per_second = args.speed
     base_delay = 1 / moves_per_second
 
-    dim = (length + 1) * (width + 1)
+    dim = (length + 1, width + 1)
     max_drought = length * width
 
     renderer = None
     if games_shown != 0:
         renderer = TerminalRenderer()
 
-    agent = ai.DefaultAgent((dim,))
+    agent = ai.DefaultAgent(dim)
 
     facing = init_dir
     max_distance = np.sqrt(length ** 2 + width ** 2)
@@ -114,8 +115,7 @@ def main(args=None):
         snake = core.Snake((width // 2, length // 2), length // 4, init_dir)
         state = core.GameState(snake, length, width, max_drought=max_drought, food_max=5)
 
-        prev_col = reshape(state.to_matrix())
-
+        prev_state = reshape(state.to_matrix())
         logging.info('Starting game ' + str(i))
 
         while state.is_playable():
@@ -130,8 +130,9 @@ def main(args=None):
                 move = np.random.randint(3)
                 logging.info('Generated: ' + str(move))
             else:
-                prediction = agent.make_choice(np.vstack([prev_col, old_state]))[0]
-                move = max(range(len(prediction)), key=lambda j: prediction[j])
+                # skip prediction for previous state. Output is dim[0], 3
+                prediction = agent.make_choice(np.array([prev_state, old_state]))[0].T
+                move = max(range(len(prediction)), key=lambda j: np.sum(prediction[j]))
 
                 logging.info('Predicted: ' + str(move))
 
@@ -143,15 +144,15 @@ def main(args=None):
             scaled_distance = np.abs(state.min_distance_to_food()) / max_distance
             reward = determine_reward(old_state, new_state, state.is_playable(), scaled_distance)
 
-            prev_col = old_state
+            prev_state = old_state
 
             logging.info('Reward for move: ' + str(reward))
 
-            agent.remember(np.vstack([prev_col, old_state]), move, reward,
-                           np.vstack([old_state, new_state]), state.is_playable())
+            agent.remember(np.array([prev_state, old_state]), move, reward,
+                           np.array([old_state, new_state]), state.is_playable())
 
-            agent.train_short_memory(np.vstack([prev_col, old_state]), move, reward,
-                                     np.vstack([old_state, new_state]), state.is_playable())
+            agent.train_short_memory(np.array([prev_state, old_state]), move, reward,
+                                     np.array([old_state, new_state]), state.is_playable())
 
             if rendering:
                 renderer.render(state, i)

@@ -178,6 +178,16 @@ class GameState:
         # TODO(matthew-c21): This represents game state, so it can probably be simplified to food and snake locations
         #  rather than including empty space.
         matrix = np.zeros((self.length + 1, self.width + 1))  # Add 1 since OOB is at width/length.
+
+        # Make walls negative as well.
+        for i in range(self.width):
+            matrix[i, 0] = -1
+            matrix[i, self.length] = -1
+
+        for i in range(self.length):
+            matrix[0, i] = -1
+            matrix[self.width, i] = -1
+
         for part in self.snake:
             x, y = part.pos
             matrix[y, x] = -100  # numpy matrices are accessed row, column

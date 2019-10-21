@@ -112,9 +112,11 @@ class DefaultAgent(Agent):
         # TODO(matthew-c21): Determine how output_dim affects model.
         model = Sequential()
         model.add(Dense(units=512, activation='relu', input_shape=input_dim))
-        model.add(Dropout(0.5))
+        model.add(Dropout(0.15))
         model.add(Dense(units=256, activation='relu'))
-        model.add(Dropout(0.5))
+        model.add(Dropout(0.15))
+        model.add(Dense(units=128, activation='relu'))
+        model.add(Dropout(0.15))
         model.add(Dense(units=3, activation='softmax'))
         opt = Adam(learning_rate)
         model.compile(loss='mse', optimizer=opt)
