@@ -212,7 +212,9 @@ class GameState:
             self.snake.intersects(right) or self._out_of_bounds(right),
         ]
 
-        return np.hstack((self.min_distance_to_food() / np.sqrt(self.length ** 2 + self.width ** 2),
+        return np.hstack(([np.arccos((food.pos @ self.snake.head().pos) /
+                                     (np.linalg.norm(food.pos) * np.linalg.norm(self.snake.head().pos)))
+                           for food in self.food_items],
                           [1 if x else 0 for x in vector]))
 
     def min_distance_to_food(self):

@@ -94,7 +94,8 @@ def main(args=None):
     if games_shown != 0:
         renderer = TerminalRenderer()
 
-    agent = ai.DefaultAgent((6,), learning_rate=0.01)
+    # TODO(matthew-c21): This value changes in response to state.food_max.
+    agent = ai.DefaultAgent((6,), learning_rate=0.0001, gamma=0.01)
 
     facing = init_dir
     max_distance = np.sqrt(length ** 2 + width ** 2)
@@ -105,7 +106,7 @@ def main(args=None):
         rendering = games_shown != 0 and i % games_shown == 0
 
         snake = core.Snake((width // 2, length // 2), length // 4, init_dir)
-        state = core.GameState(snake, length, width, max_drought=max_drought, food_max=5)
+        state = core.GameState(snake, length, width, max_drought=max_drought, food_max=1)
         has_eaten = False
 
         prev_state = reshape(state.get_primitive_state_vector(has_eaten))
