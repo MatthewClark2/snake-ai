@@ -36,18 +36,10 @@ def determine_reward(old_state, new_state, playable, min_distance=None):
     # Punish game over.
     if not playable:
         return -1
+    elif new_state[1] == 1:
+        return 1
 
-    # Reward eating.
-    for y, row in enumerate(old_state - new_state):
-        for x, val in enumerate(row):
-            if val > 0 and old_state[y, x] > 0:  # Head of snake occupies position where food used to be.
-                return 1  # old_state[y, x]
-
-    # Reward or punish survival.
-    if min_distance is None:
-        return 0
-
-    return -min_distance
+    return 0
 
 
 def to_move(move, facing):
@@ -102,7 +94,7 @@ def main(args=None):
     if games_shown != 0:
         renderer = TerminalRenderer()
 
-    agent = ai.DefaultAgent(dim)
+    agent = ai.DefaultAgent((6,), learning_rate=0.01)
 
     facing = init_dir
     max_distance = np.sqrt(length ** 2 + width ** 2)
@@ -114,8 +106,9 @@ def main(args=None):
 
         snake = core.Snake((width // 2, length // 2), length // 4, init_dir)
         state = core.GameState(snake, length, width, max_drought=max_drought, food_max=5)
+        has_eaten = False
 
-        prev_state = reshape(state.to_matrix())
+        prev_state = reshape(state.get_primitive_state_vector(has_eaten))
         logging.info('Starting game ' + str(i))
 
         while state.is_playable():
@@ -124,23 +117,23 @@ def main(args=None):
             # Decrease epsilon over time.
             agent.set_epsilon(MAX_EPSILON/2 - i)
 
-            old_state = reshape(state.to_matrix())
+            old_state = reshape(state.get_primitive_state_vector(has_eaten))
 
             if np.random.randint(MAX_EPSILON) < agent.epsilon:
                 move = np.random.randint(3)
                 logging.info('Generated: ' + str(move))
             else:
                 # skip prediction for previous state. Output is dim[0], 3
-                prediction = agent.make_choice(np.array([prev_state, old_state]))[0].T
-                move = max(range(len(prediction)), key=lambda j: np.sum(prediction[j]))
+                prediction = agent.make_choice(np.array([prev_state, old_state]))[1]
+                move = max(range(len(prediction)), key=lambda j: prediction[j])
 
                 logging.info('Predicted: ' + str(move))
 
             move = to_move(move, facing)
             facing = move
-            state.update(move)
+            has_eaten = state.update(move)
 
-            new_state = reshape(state.to_matrix())
+            new_state = reshape(state.get_primitive_state_vector(has_eaten))
             scaled_distance = np.abs(state.min_distance_to_food()) / max_distance
             reward = determine_reward(old_state, new_state, state.is_playable(), scaled_distance)
 

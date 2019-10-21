@@ -136,9 +136,12 @@ class GameState:
         self._update_food()
 
         if self.snake.intersects(updated_position, 1) or \
-                GameState._out_of_bounds(self.width, self.length, updated_position) or \
+                self._out_of_bounds(updated_position) or \
                 self.turn_count > self.max_drought:
             self.state_flag = False
+
+        # TODO(matthew-c21): Test return value.
+        return has_eaten
 
     def _update_food(self):
         np.random.seed(self.seed)
@@ -151,10 +154,9 @@ class GameState:
 
             self.food_items.append(new_food)
 
-    @staticmethod
-    def _out_of_bounds(width, length, position):
+    def _out_of_bounds(self, position):
         x, y = position
-        if x <= 0 or x >= width or y <= 0 or y >= length:
+        if x <= 0 or x >= self.width or y <= 0 or y >= self.length:
             return True
         return False
 
@@ -175,6 +177,7 @@ class GameState:
         return self.food_items
 
     def to_matrix(self):
+        # TODO(matthew-c21): Update tests and rendering to recognize walls being negative rather than 0.
         # TODO(matthew-c21): This represents game state, so it can probably be simplified to food and snake locations
         #  rather than including empty space.
         matrix = np.zeros((self.length + 1, self.width + 1))  # Add 1 since OOB is at width/length.
@@ -197,6 +200,20 @@ class GameState:
             matrix[y, x] = food.value
 
         return matrix
+
+    def get_primitive_state_vector(self, has_eaten):
+        # TODO(matthew-c21): Unit test this method.
+        up, down, left, right = [self.snake.head().pos + direction for direction in (UP, DOWN, LEFT, RIGHT)]
+        vector = [
+            has_eaten,
+            self.snake.intersects(up) or self._out_of_bounds(up),
+            self.snake.intersects(down) or self._out_of_bounds(down),
+            self.snake.intersects(left) or self._out_of_bounds(left),
+            self.snake.intersects(right) or self._out_of_bounds(right),
+        ]
+
+        return np.hstack((self.min_distance_to_food() / np.sqrt(self.length ** 2 + self.width ** 2),
+                          [1 if x else 0 for x in vector]))
 
     def min_distance_to_food(self):
         # TODO(matthew-c21): Return both the scalar and vector. Prepend the vector to the linearized matrix
