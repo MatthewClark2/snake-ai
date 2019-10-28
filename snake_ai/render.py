@@ -1,5 +1,7 @@
 import curses
 import time
+import pygame
+import numpy as np
 from abc import ABC, abstractmethod
 
 
@@ -114,3 +116,50 @@ class TerminalRenderer(Renderer):
          environment. The synchronicity of this function depends on whether or not this object has been called with
          `asyncKeys(True)`."""
         return self.stdscr.getch()
+
+
+class PygameRenderer(Renderer):
+    """Pygame renderer focused around only having a single food type on screen.
+    This class does not manage its own clock."""
+    def __init__(self, length, width, block_size):
+        pygame.font.init()
+        self.block_size = block_size
+        self.length = length
+        self.width = width
+        self.text_area_start = width * block_size + 50
+        self.font = pygame.font.SysFont('Arial', 24)
+        self.window = pygame.display.set_mode((self.text_area_start + 150, length * block_size))
+
+    def render(self, game_state):
+        self.window.fill((255, 255, 255))
+
+        for segment in game_state.snake:
+            (x, y) = self.block_size * np.array(segment.pos)
+            r = pygame.Rect((x, y), (self.block_size, self.block_size))
+            pygame.draw.rect(self.window, (0, 255, 0), r)
+
+        for segment in game_state.food():
+            (x, y) = self.block_size * np.array(segment.pos)
+            r = pygame.Rect((x, y), (self.block_size, self.block_size))
+            pygame.draw.rect(self.window, (255, 0, 0), r)
+
+        text_surface = self.font.render('Score: ' + str(game_state.get_score()), False, (0, 0, 0))
+        self.window.blit(text_surface, (self.text_area_start, self.length * self.block_size // 2))
+
+        # Add a rectangle around the play area.
+        r = pygame.Rect(0, 0, (self.width + 1) * self.block_size, self.length * self.block_size)
+
+        pygame.draw.rect(self.window, (0, 0, 0), r, self.block_size)
+
+        pygame.display.update()
+
+    def replay(self, initial_state, moves, replay_speed):
+        # Render the initial state.
+        self.render(initial_state)
+
+        for move in moves:
+            initial_state.update(move)
+            self.render(initial_state)
+
+    def close(self):
+        pygame.quit()
