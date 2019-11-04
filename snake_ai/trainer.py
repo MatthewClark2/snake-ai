@@ -1,7 +1,7 @@
 import argparse
 import logging
 import sys
-import time
+import pygame
 
 import numpy as np
 import tensorflow.compat.v1 as tf
@@ -9,7 +9,7 @@ from keras.utils import to_categorical
 
 import ai
 import core
-from render import TerminalRenderer
+from render import PygameRenderer
 
 MAX_EPSILON = 100  # Hardcoded value based on example code.
 
@@ -83,22 +83,19 @@ def main(args=None):
 
     # Shows one game per every games_shown games.
     games_shown = args.display
-
     moves_per_second = args.speed
-    base_delay = 1 / moves_per_second
-
-    dim = (length + 1, width + 1)
     max_drought = length * width
+
+    clock = pygame.time.Clock()
 
     renderer = None
     if games_shown != 0:
-        renderer = TerminalRenderer()
+        renderer = PygameRenderer(length, width, 20)
 
     # TODO(matthew-c21): This value changes in response to state.food_max.
     agent = ai.DefaultAgent((1,), learning_rate=0.0001, gamma=0.01)
 
     facing = init_dir
-    max_distance = np.sqrt(length ** 2 + width ** 2)
 
     high_score = 0
 
@@ -111,8 +108,6 @@ def main(args=None):
         logging.info('Starting game ' + str(i))
 
         while state.is_playable():
-            loop_start = time.time()
-
             # Decrease epsilon over time.
             agent.set_epsilon(max(MAX_EPSILON - i, 0))
 
@@ -134,7 +129,7 @@ def main(args=None):
             state.update(move)
 
             new_state = reshape(state.get_primitive_state_vector())
-            scaled_distance = 0.01  # np.linalg.norm(snake.head().pos - state.food_items[0].pos) / max_distance
+            scaled_distance = 0.0001  # np.linalg.norm(snake.head().pos - state.food_items[0].pos) / max_distance
             reward = determine_reward(old_state, new_state, state.is_playable(), scaled_distance)
 
             logging.info('Reward for move: ' + str(reward))
@@ -143,9 +138,11 @@ def main(args=None):
             agent.train_short_memory(old_state, move, reward, new_state, 1 if state.is_playable() else 0)
 
             if rendering:
-                renderer.render(state, i)
-                elapsed_time = time.time() - loop_start
-                time.sleep(base_delay - elapsed_time % base_delay)
+                frame_count = 0
+                while frame_count < (60 / moves_per_second):
+                    frame_count += 1
+                    renderer.render(state)
+                    clock.tick(60)
 
         agent.replay_new()
         high_score = max(high_score, state.get_score())
