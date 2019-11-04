@@ -39,7 +39,7 @@ def determine_reward(old_state, new_state, playable, min_distance=None):
     elif new_state[1] == 1:
         return 1
 
-    return 0
+    return -min_distance
 
 
 def to_move(move, facing):
@@ -125,8 +125,13 @@ def main(args=None):
                 logging.info('Generated: ' + str(move))
             else:
                 # skip prediction for previous state. Output is dim[0], 3
-                prediction = agent.make_choice(np.array([prev_state, old_state]))[1]
-                move = max(range(len(prediction)), key=lambda j: prediction[j])
+                prediction = agent.make_choice(np.array([prev_state, old_state]))
+                prediction = prediction[0] + prediction[1]
+
+                move, max_pred = 0, prediction[0]
+                for j, pos in enumerate(prediction):
+                    if max_pred > pos:
+                        move = j
 
                 logging.info('Predicted: ' + str(move))
 
@@ -164,7 +169,7 @@ def main(args=None):
 
 if __name__ == '__main__':
     # Overwrite the logfile every time that training begins.
-    logging.basicConfig(filename='training.log', filemode='w', level=logging.WARN)
+    logging.basicConfig(filename='training.log', filemode='w', level=logging.INFO)
     logging.info('Starting training.')
 
     main(sys.argv[1:])

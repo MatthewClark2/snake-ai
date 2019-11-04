@@ -115,8 +115,6 @@ class DefaultAgent(Agent):
         model.add(Dropout(0.15))
         model.add(Dense(units=256, activation='relu'))
         model.add(Dropout(0.15))
-        model.add(Dense(units=128, activation='relu'))
-        model.add(Dropout(0.15))
         model.add(Dense(units=3, activation='softmax'))
         opt = Adam(learning_rate)
         model.compile(loss='mse', optimizer=opt)

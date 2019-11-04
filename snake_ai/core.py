@@ -205,17 +205,21 @@ class GameState:
         # TODO(matthew-c21): Unit test this method.
         up, down, left, right = [self.snake.head().pos + direction for direction in (UP, DOWN, LEFT, RIGHT)]
         vector = [
-            has_eaten,
+            has_eaten,   # Replace this with snake's absolute direction.
             self.snake.intersects(up) or self._out_of_bounds(up),
             self.snake.intersects(down) or self._out_of_bounds(down),
             self.snake.intersects(left) or self._out_of_bounds(left),
             self.snake.intersects(right) or self._out_of_bounds(right),
         ]
 
-        return np.hstack(([np.arccos((food.pos @ self.snake.head().pos) /
-                                     (np.linalg.norm(food.pos) * np.linalg.norm(self.snake.head().pos)))
-                           for food in self.food_items],
-                          [1 if x else 0 for x in vector]))
+        # TODO(matthew-c21): Assume food_max is 1.
+        theta_transform = lambda t, y: (t if y > 0 else t + np.pi) / (2 * np.pi)
+
+        relative_pos = self.snake.head().pos - self.food_items[0].pos
+        relative_pos = np.array(relative_pos) / max(np.abs(relative_pos))
+
+        h = np.sum(np.power(relative_pos, 2))
+        return np.hstack(([theta_transform(np.arccos(relative_pos[0]), h)], [1 if x else 0 for x in vector]))
 
     def min_distance_to_food(self):
         # TODO(matthew-c21): Return both the scalar and vector. Prepend the vector to the linearized matrix
