@@ -203,12 +203,15 @@ class GameState:
 
     def get_primitive_state_vector(self):
         # TODO(matthew-c21): Unit test this method.
-        up, down, left, right = [self.snake.head().pos + direction for direction in (UP, DOWN, LEFT, RIGHT)]
         facing = self.snake.facing
+        pos = self.snake.head().pos
+        x, y = facing
+        ahead = facing + pos
+        left = np.array([y, -x]) + pos
+        right = np.array([-y, x]) + pos
+
         vector = [
-            0 if _eq(facing, UP) else .25 if _eq(facing, DOWN) else .5 if _eq(facing, LEFT) else .75,
-            self.snake.intersects(up) or self._out_of_bounds(up),
-            self.snake.intersects(down) or self._out_of_bounds(down),
+            self.snake.intersects(ahead) or self._out_of_bounds(ahead),
             self.snake.intersects(left) or self._out_of_bounds(left),
             self.snake.intersects(right) or self._out_of_bounds(right),
         ]
@@ -233,7 +236,3 @@ class GameState:
 
     def get_seed(self):
         return self.seed
-
-
-def _eq(v1, v2):
-    return (v1 == v2).all()

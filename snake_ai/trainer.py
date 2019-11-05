@@ -84,7 +84,7 @@ def main(args=None):
     # Shows one game per every games_shown games.
     games_shown = args.display
     moves_per_second = args.speed
-    max_drought = length * width
+    max_drought = length * width * 10
 
     clock = pygame.time.Clock()
 
@@ -93,7 +93,7 @@ def main(args=None):
         renderer = PygameRenderer(length, width, 20)
 
     # TODO(matthew-c21): This value changes in response to state.food_max.
-    agent = ai.DefaultAgent((1,), learning_rate=0.0001, gamma=0.01)
+    agent = ai.DefaultAgent((1,), learning_rate=0.00001)
 
     facing = init_dir
 
@@ -129,7 +129,7 @@ def main(args=None):
             state.update(move)
 
             new_state = reshape(state.get_primitive_state_vector())
-            scaled_distance = 0.0001  # np.linalg.norm(snake.head().pos - state.food_items[0].pos) / max_distance
+            scaled_distance = 0  # np.linalg.norm(snake.head().pos - state.food_items[0].pos) / max_distance
             reward = determine_reward(old_state, new_state, state.is_playable(), scaled_distance)
 
             logging.info('Reward for move: ' + str(reward))
@@ -162,7 +162,7 @@ def handle_game_over(renderer, high_score, should_close=False):
 
 if __name__ == '__main__':
     # Overwrite the logfile every time that training begins.
-    logging.basicConfig(filename='training.log', filemode='w', level=logging.INFO)
+    logging.basicConfig(filename='training.log', filemode='w', level=logging.WARN)
     logging.info('Starting training.')
 
     main(sys.argv[1:])

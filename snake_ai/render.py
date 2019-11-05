@@ -149,7 +149,7 @@ class PygameRenderer(Renderer):
         # Add a rectangle around the play area.
         r = pygame.Rect(0, 0, (self.width + 1) * self.block_size, self.length * self.block_size)
 
-        pygame.draw.rect(self.window, (0, 0, 0), r, self.block_size)
+        pygame.draw.rect(self.window, (0, 0, 0), r, 1)
 
         pygame.display.update()
 
