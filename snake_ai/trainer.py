@@ -140,6 +140,11 @@ def main(args=None):
             if rendering:
                 frame_count = 0
                 while frame_count < (60 / moves_per_second):
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            pygame.quit()
+                            handle_game_over(renderer, high_score, should_close=games_shown != 0)
+                            sys.exit(0)
                     frame_count += 1
                     renderer.render(state)
                     clock.tick(60)
@@ -147,10 +152,12 @@ def main(args=None):
         agent.replay_new()
         high_score = max(high_score, state.get_score())
 
-    if games_shown != 0:
-        renderer.close()
+    handle_game_over(renderer, high_score, games_shown == 0)
 
+
+def handle_game_over(renderer, high_score, should_close=False):
     print('Max score achieved: ', high_score)
+    renderer.close()
 
 
 if __name__ == '__main__':
