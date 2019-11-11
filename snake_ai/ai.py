@@ -60,7 +60,7 @@ class RandomAgent(Agent):
 
 # TODO(matthew-c21) - Finish implementing this model.
 class DefaultAgent(Agent):
-    def __init__(self, input_dim, learning_rate=0.00005, epsilon=0, gamma=0, weights=None):
+    def __init__(self, input_dim, learning_rate=0.0005, epsilon=0, gamma=0, weights=None):
         self.input_dim = input_dim
         self.learning_rate = learning_rate
         self.epsilon = epsilon
@@ -98,13 +98,9 @@ class DefaultAgent(Agent):
             batch = random.sample(self.memory, max_sample)
         else:
             batch = self.memory
-        for state, action, reward, next_state, done in batch:
-            target = reward
-            if not done:
-                target = reward + self.gamma * np.amax(self.model.predict(next_state)[0])
-            target_f = self.make_choice(state)
-            target_f[0][np.argmax(action)] = target
-            self.model.fit(state, target_f, epochs=1, verbose=0)
+
+        for entry in batch:
+            self.train_short_memory(*entry)
 
     @staticmethod
     def _network(learning_rate, input_dim, output_dim=120, weights=None):
@@ -114,6 +110,8 @@ class DefaultAgent(Agent):
         model.add(Dense(units=512, activation='relu', input_shape=input_dim))
         model.add(Dropout(0.15))
         model.add(Dense(units=256, activation='relu'))
+        model.add(Dropout(0.15))
+        model.add(Dense(units=128, activation='relu'))
         model.add(Dropout(0.15))
         model.add(Dense(units=3, activation='softmax'))
         opt = Adam(learning_rate)

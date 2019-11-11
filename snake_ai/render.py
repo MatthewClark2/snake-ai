@@ -35,11 +35,19 @@ class Renderer(ABC):
         """Discard any allocated resources associated with the rendering process."""
         pass
 
+    @abstractmethod
+    def clear(self):
+        """Clear the screen."""
+        pass
+
 
 class TerminalRenderer(Renderer):
     # TODO(matthew-c21): Come up with some kind of visual customization options.
     """Renders snake to the terminal using the ncurses library. This class should be utilized inside of the
     curses.wrapper method to avoid any lingering modifications to terminal function."""
+
+    def clear(self):
+        self.stdscr.clear()
 
     def __init__(self):
         self.stdscr = curses.initscr()
@@ -163,3 +171,6 @@ class PygameRenderer(Renderer):
 
     def close(self):
         pygame.quit()
+
+    def clear(self):
+        self.window.fill((255, 255, 255))

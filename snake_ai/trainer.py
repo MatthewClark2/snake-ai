@@ -5,13 +5,13 @@ import pygame
 
 import numpy as np
 import tensorflow.compat.v1 as tf
-from keras.utils import to_categorical
 
 import ai
 import core
 from render import PygameRenderer
 
-MAX_EPSILON = 100  # Hardcoded value based on example code.
+MAX_EPSILON = 80  # Hardcoded value based on example code.
+CHOICE_EPSILON = 200  # same as above
 
 
 def parse_args(args):
@@ -25,18 +25,17 @@ def parse_args(args):
     return parser.parse_args(args)
 
 
-def determine_reward(old_state, new_state, playable, min_distance=None):
+def determine_reward(playable, min_distance, has_eaten):
     """Determines a reward in the range [-1, 1]. Eating returns 1, while dying returns -1. Any other rewards are based
     on the distance to the nearest food item.
 
-    :param old_state the state before the move was taken.
-    :param new_state the state of the game after a move was taken.
     :param playable boolean determining whether or not the new state is playable.
-    :param min_distance a value in [0, 1) determining how close the nearest food item is."""
+    :param min_distance a value in [0, 1) determining how close the nearest food item is.
+    :param has_eaten a boolean determining whether or not the previous move resulted in eating."""
     # Punish game over.
     if not playable:
         return -1
-    elif new_state[1] == 1:
+    elif has_eaten:
         return 1
 
     return -min_distance
@@ -62,7 +61,8 @@ def to_move(move, facing):
 
 
 def reshape(matrix):
-    return matrix  # .reshape((length, -1))
+    # The input must be re-wrapped into a numpy array to be recognized correctly.
+    return np.array([matrix.reshape((5,))])  # .reshape((length, -1))
 
 
 def main(args=None):
@@ -93,7 +93,7 @@ def main(args=None):
         renderer = PygameRenderer(length, width, 20)
 
     # TODO(matthew-c21): This value changes in response to state.food_max.
-    agent = ai.DefaultAgent((1,), learning_rate=0.00001)
+    agent = ai.DefaultAgent((5,))
 
     facing = init_dir
 
@@ -105,6 +105,7 @@ def main(args=None):
         snake = core.Snake((width // 2, length // 2), length // 4, init_dir)
         state = core.GameState(snake, length, width, max_drought=max_drought, food_max=1)
 
+        print('Game: %d, ' % i, end='')
         logging.info('Starting game ' + str(i))
 
         while state.is_playable():
@@ -113,29 +114,28 @@ def main(args=None):
 
             old_state = reshape(state.get_primitive_state_vector())
 
-            if np.random.randint(MAX_EPSILON) < agent.epsilon:
-                move = np.random.randint(3)
-                logging.info('Generated: ' + str(move))
+            if np.random.randint(CHOICE_EPSILON) < agent.epsilon:
+                action = np.random.randint(3)
+                logging.info('Generated: ' + str(action))
             else:
-                # skip prediction for previous state. Output is dim[0], 3
-                prediction = agent.make_choice(np.array(old_state))[0]
+                prediction = agent.make_choice(old_state)
 
-                move = np.argmax(prediction)
+                action = np.argmax(prediction)
 
-                logging.info('Predicted: ' + str(move))
+                logging.info('Predicted: ' + str(action))
 
-            move = to_move(move, facing)
+            move = to_move(action, facing)
             facing = move
-            state.update(move)
+            has_eaten = state.update(move)
 
             new_state = reshape(state.get_primitive_state_vector())
             scaled_distance = 0  # np.linalg.norm(snake.head().pos - state.food_items[0].pos) / max_distance
-            reward = determine_reward(old_state, new_state, state.is_playable(), scaled_distance)
+            reward = determine_reward(state.is_playable(), scaled_distance, has_eaten)
 
             logging.info('Reward for move: ' + str(reward))
 
-            agent.remember(old_state, move, reward, new_state, 1 if state.is_playable() else 0)
-            agent.train_short_memory(old_state, move, reward, new_state, 1 if state.is_playable() else 0)
+            agent.remember(old_state, action, reward, new_state, 1 if state.is_playable() else 0)
+            # agent.train_short_memory(old_state, move, reward, new_state, 1 if state.is_playable() else 0)
 
             if rendering:
                 frame_count = 0
@@ -148,7 +148,10 @@ def main(args=None):
                     frame_count += 1
                     renderer.render(state)
                     clock.tick(60)
+            elif renderer is not None:
+                renderer.clear()
 
+        print('Score: %d' % state.get_score())
         agent.replay_new()
         high_score = max(high_score, state.get_score())
 
@@ -157,12 +160,13 @@ def main(args=None):
 
 def handle_game_over(renderer, high_score, should_close=False):
     print('Max score achieved: ', high_score)
-    renderer.close()
+    if should_close:
+        renderer.close()
 
 
 if __name__ == '__main__':
     # Overwrite the logfile every time that training begins.
-    logging.basicConfig(filename='training.log', filemode='w', level=logging.WARN)
+    logging.basicConfig(filename='training.log', filemode='w', level=logging.INFO)
     logging.info('Starting training.')
 
     main(sys.argv[1:])
