@@ -107,13 +107,13 @@ class DefaultAgent(Agent):
         # Shamelessly stolen from https://github.com/maurock/snake-ga/blob/master/DQN.py.
         # TODO(matthew-c21): Determine how output_dim affects model.
         model = Sequential()
-        model.add(Dense(units=512, activation='relu', input_shape=input_dim))
+        model.add(Dense(units=120, activation='relu', input_shape=input_dim))
         model.add(Dropout(0.15))
-        model.add(Dense(units=256, activation='relu'))
+        model.add(Dense(units=70, activation='relu', use_bias=True))
         model.add(Dropout(0.15))
-        model.add(Dense(units=128, activation='relu'))
+        model.add(Dense(units=30, activation='relu', use_bias=True))
         model.add(Dropout(0.15))
-        model.add(Dense(units=3, activation='softmax'))
+        model.add(Dense(units=3, activation='softmax', use_bias=True))
         opt = Adam(learning_rate)
         model.compile(loss='mse', optimizer=opt)
 

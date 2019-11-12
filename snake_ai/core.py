@@ -216,14 +216,7 @@ class GameState:
             self.snake.intersects(right) or self._out_of_bounds(right),
         ]
 
-        # TODO(matthew-c21): Assume food_max is 1.
-        theta_transform = lambda t, y: (t if y > 0 else t + np.pi) / (2 * np.pi)
-
-        relative_pos = self.snake.head().pos - self.food_items[0].pos
-        # relative_pos = np.array(relative_pos) / max(np.abs(relative_pos))
-
-        h = np.sum(np.power(relative_pos, 2))
-        # return np.hstack(([theta_transform(np.arccos(relative_pos[0]), h)], [1 if x else 0 for x in vector]))
+        relative_pos = (self.snake.head().pos - self.food_items[0].pos) / (self.width, self.length)
         return np.hstack([relative_pos, vector])
 
     def min_distance_to_food(self):

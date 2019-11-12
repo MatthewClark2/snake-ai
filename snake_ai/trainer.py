@@ -5,6 +5,7 @@ import pygame
 
 import numpy as np
 import tensorflow.compat.v1 as tf
+from keras.utils import to_categorical
 
 import ai
 import core
@@ -34,9 +35,9 @@ def determine_reward(playable, min_distance, has_eaten):
     :param has_eaten a boolean determining whether or not the previous move resulted in eating."""
     # Punish game over.
     if not playable:
-        return -1
+        return -100
     elif has_eaten:
-        return 1
+        return 100
 
     return -min_distance
 
@@ -84,7 +85,7 @@ def main(args=None):
     # Shows one game per every games_shown games.
     games_shown = args.display
     moves_per_second = args.speed
-    max_drought = length * width * 10
+    max_drought = length * width * 3
 
     clock = pygame.time.Clock()
 
@@ -93,7 +94,7 @@ def main(args=None):
         renderer = PygameRenderer(length, width, 20)
 
     # TODO(matthew-c21): This value changes in response to state.food_max.
-    agent = ai.DefaultAgent((5,))
+    agent = ai.DefaultAgent((5,), learning_rate=0.01, gamma=0.0001)
 
     facing = init_dir
 
@@ -129,13 +130,13 @@ def main(args=None):
             has_eaten = state.update(move)
 
             new_state = reshape(state.get_primitive_state_vector())
-            scaled_distance = 0  # np.linalg.norm(snake.head().pos - state.food_items[0].pos) / max_distance
+            scaled_distance = distance(snake.head().pos, state.food_items[0].pos) / (max_drought * 1000)
             reward = determine_reward(state.is_playable(), scaled_distance, has_eaten)
 
             logging.info('Reward for move: ' + str(reward))
 
             agent.remember(old_state, action, reward, new_state, 1 if state.is_playable() else 0)
-            # agent.train_short_memory(old_state, move, reward, new_state, 1 if state.is_playable() else 0)
+            agent.train_short_memory(old_state, action, reward, new_state, 1 if state.is_playable() else 0)
 
             if rendering:
                 frame_count = 0
@@ -143,7 +144,8 @@ def main(args=None):
                     for event in pygame.event.get():
                         if event.type == pygame.QUIT:
                             pygame.quit()
-                            handle_game_over(renderer, high_score, should_close=games_shown != 0)
+                            renderer.close()
+                            handle_game_over(high_score)
                             sys.exit(0)
                     frame_count += 1
                     renderer.render(state)
@@ -155,18 +157,21 @@ def main(args=None):
         agent.replay_new()
         high_score = max(high_score, state.get_score())
 
-    handle_game_over(renderer, high_score, games_shown == 0)
+    handle_game_over(renderer)
 
 
-def handle_game_over(renderer, high_score, should_close=False):
+def handle_game_over(high_score):
     print('Max score achieved: ', high_score)
-    if should_close:
-        renderer.close()
+
+
+def distance(p1, p2):
+    p = p1 - p2
+    return np.sqrt(p[0] ** 2 + p[1] ** 2)
 
 
 if __name__ == '__main__':
     # Overwrite the logfile every time that training begins.
-    logging.basicConfig(filename='training.log', filemode='w', level=logging.INFO)
+    logging.basicConfig(filename='training.log', filemode='w', level=logging.WARN)
     logging.info('Starting training.')
 
     main(sys.argv[1:])
