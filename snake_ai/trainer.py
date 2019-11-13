@@ -104,7 +104,7 @@ def main(args=None):
     for i in range(1, n + 1):  # Number games from 1 to simplify math.
         rendering = games_shown != 0 and i % games_shown == 0
 
-        snake = core.Snake((width // 2, length // 2), 4, init_dir)
+        snake = core.Snake((width // 2, length // 2), 1, init_dir)
         state = core.GameState(snake, length, width, max_drought=max_drought, food_max=1)
 
         print('Game: %d, ' % i, end='')

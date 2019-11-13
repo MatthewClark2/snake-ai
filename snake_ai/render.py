@@ -134,9 +134,9 @@ class PygameRenderer(Renderer):
         self.block_size = block_size
         self.length = length
         self.width = width
-        self.text_area_start = width * block_size + 50
+        self.text_area_start = (width + 1) * block_size + 50
         self.font = pygame.font.SysFont('Arial', 24)
-        self.window = pygame.display.set_mode((self.text_area_start + 150, length * block_size))
+        self.window = pygame.display.set_mode((self.text_area_start + 150, (length + 1) * block_size))
 
     def render(self, game_state):
         self.window.fill((255, 255, 255))
