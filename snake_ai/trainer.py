@@ -5,14 +5,10 @@ import pygame
 
 import numpy as np
 import tensorflow.compat.v1 as tf
-from keras.utils import to_categorical
 
 import ai
 import core
 from render import PygameRenderer
-
-MAX_EPSILON = 80  # Hardcoded value based on example code.
-CHOICE_EPSILON = 200  # same as above
 
 
 def parse_args(args):
@@ -35,9 +31,9 @@ def determine_reward(playable, min_distance, has_eaten):
     :param has_eaten a boolean determining whether or not the previous move resulted in eating."""
     # Punish game over.
     if not playable:
-        return -100
+        return -1
     elif has_eaten:
-        return 100
+        return 1
 
     return -min_distance
 
@@ -63,7 +59,7 @@ def to_move(move, facing):
 
 def reshape(matrix):
     # The input must be re-wrapped into a numpy array to be recognized correctly.
-    return np.array([matrix.reshape((5,))])  # .reshape((length, -1))
+    return matrix.reshape((1, -1))
 
 
 def main(args=None):
@@ -85,7 +81,7 @@ def main(args=None):
     # Shows one game per every games_shown games.
     games_shown = args.display
     moves_per_second = args.speed
-    max_drought = length * width * 3
+    max_drought = length * width
 
     clock = pygame.time.Clock()
 
@@ -94,49 +90,43 @@ def main(args=None):
         renderer = PygameRenderer(length, width, 20)
 
     # TODO(matthew-c21): This value changes in response to state.food_max.
-    agent = ai.DefaultAgent((5,), learning_rate=0.01, gamma=0.0001)
+    agent = ai.DefaultAgent((7,), epsilon=0.5, gamma=0.95)
 
     facing = init_dir
 
     high_score = 0
 
+    # TODO(matthew-c21): Try to add replay for best game in set to see whether or not the AI has actually improved, or
+    #  if the result was a fluke. Consider storing more than one game if only the first (and / or second) best instances
+    #  were accidental.
+
+    # TODO(matthew-c21): Add option to save weights at end of training, or to load weights at start.
     for i in range(1, n + 1):  # Number games from 1 to simplify math.
         rendering = games_shown != 0 and i % games_shown == 0
 
-        snake = core.Snake((width // 2, length // 2), length // 4, init_dir)
+        snake = core.Snake((width // 2, length // 2), 4, init_dir)
         state = core.GameState(snake, length, width, max_drought=max_drought, food_max=1)
 
         print('Game: %d, ' % i, end='')
         logging.info('Starting game ' + str(i))
 
         while state.is_playable():
-            # Decrease epsilon over time.
-            agent.set_epsilon(max(MAX_EPSILON - i, 0))
-
             old_state = reshape(state.get_primitive_state_vector())
 
-            if np.random.randint(CHOICE_EPSILON) < agent.epsilon:
-                action = np.random.randint(3)
-                logging.info('Generated: ' + str(action))
-            else:
-                prediction = agent.make_choice(old_state)
-
-                action = np.argmax(prediction)
-
-                logging.info('Predicted: ' + str(action))
+            action = agent.make_choice(old_state)
 
             move = to_move(action, facing)
             facing = move
             has_eaten = state.update(move)
 
             new_state = reshape(state.get_primitive_state_vector())
-            scaled_distance = distance(snake.head().pos, state.food_items[0].pos) / (max_drought * 1000)
+            scaled_distance = 0  # distance(snake.head().pos, state.food_items[0].pos) / max_drought
             reward = determine_reward(state.is_playable(), scaled_distance, has_eaten)
 
-            logging.info('Reward for move: ' + str(reward))
+            logging.info('Reward for move %d: %f' % (action, reward))
 
-            agent.remember(old_state, action, reward, new_state, 1 if state.is_playable() else 0)
-            agent.train_short_memory(old_state, action, reward, new_state, 1 if state.is_playable() else 0)
+            agent.train_short_memory(old_state, action, reward, new_state, state.is_playable())
+            agent.remember(old_state, action, reward, new_state, state.is_playable())
 
             if rendering:
                 frame_count = 0
@@ -157,7 +147,7 @@ def main(args=None):
         agent.replay_new()
         high_score = max(high_score, state.get_score())
 
-    handle_game_over(renderer)
+    handle_game_over(high_score)
 
 
 def handle_game_over(high_score):

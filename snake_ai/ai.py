@@ -1,8 +1,8 @@
 import random
 from abc import ABC, abstractmethod
+from collections import deque
 
 import numpy as np
-from keras.layers import Flatten
 from keras.layers.core import Dense, Dropout
 from keras.models import Sequential
 from keras.optimizers import Adam
@@ -33,17 +33,9 @@ class Agent(ABC):
         """Train the model according to its short term memory."""
         pass
 
-    @abstractmethod
-    def set_epsilon(self, epsilon):
-        """Set the randomness factor for this learning agent."""
-        pass
-
 
 class RandomAgent(Agent):
     """Implements virtually no methods, instead opting to choose moves at random for testing purposes."""
-
-    def set_epsilon(self, epsilon):
-        pass
 
     def make_choice(self, game_state):
         return np.random.randint(4)
@@ -60,24 +52,26 @@ class RandomAgent(Agent):
 
 # TODO(matthew-c21) - Finish implementing this model.
 class DefaultAgent(Agent):
-    def __init__(self, input_dim, learning_rate=0.0005, epsilon=0, gamma=0, weights=None):
+    def __init__(self, input_dim, learning_rate=0.0005, epsilon=1.0, gamma=0, weights=None):
         self.input_dim = input_dim
         self.learning_rate = learning_rate
         self.epsilon = epsilon
+        self.epsilon_decay = 0.95
+        self.min_epsilon = 0.01
         self.gamma = gamma
-        self.memory = []
+        self.memory = deque(maxlen=5000)
         self.short_memory = np.array([])
         self.model = DefaultAgent._network(learning_rate, input_dim, weights=weights)
 
     def make_choice(self, game_state):
         # TODO(matthew-c21): Determine if more configuration needed.
-        return self.model.predict(game_state)
+        if np.random.rand() < self.epsilon:
+            return np.random.randint(3)
+        prediction = self.model.predict(game_state)
+        return np.argmax(prediction[0])
 
     def dump_weights(self):
         return self.model.get_weights()
-
-    def set_epsilon(self, epsilon):
-        self.epsilon = epsilon
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
@@ -85,22 +79,21 @@ class DefaultAgent(Agent):
     def train_short_memory(self, state, action, reward, next_state, done):
         target = reward
         if not done:
-            target = reward + self.gamma * np.amax(self.make_choice(next_state)[0])
+            target += self.gamma * np.amax(self.model.predict(next_state)[0])
 
-        target_f = self.make_choice(state)
-        target_f[0][np.argmax(action)] = target
-        self.model.fit(state, target_f, epochs=1, verbose=0)
+        target_f = self.model.predict(state)
+        target_f[0][action] = target
+        self.model.fit(state, target_f, epochs=5, verbose=0)
 
     def replay_new(self, max_sample=1000):
         """Retrain the model based on a sampling of its own memory."""
-        # TODO(matthew-c21): Determine how this actually works.
-        if len(self.memory) > max_sample:
-            batch = random.sample(self.memory, max_sample)
-        else:
-            batch = self.memory
+        batch = self.memory if len(self.memory) < max_sample else random.sample(self.memory, max_sample)
 
         for entry in batch:
             self.train_short_memory(*entry)
+
+        if self.epsilon_decay > self.min_epsilon:
+            self.epsilon *= self.epsilon_decay
 
     @staticmethod
     def _network(learning_rate, input_dim, output_dim=120, weights=None):
@@ -109,9 +102,9 @@ class DefaultAgent(Agent):
         model = Sequential()
         model.add(Dense(units=120, activation='relu', input_shape=input_dim))
         model.add(Dropout(0.15))
-        model.add(Dense(units=70, activation='relu', use_bias=True))
+        model.add(Dense(units=120, activation='relu', use_bias=True))
         model.add(Dropout(0.15))
-        model.add(Dense(units=30, activation='relu', use_bias=True))
+        model.add(Dense(units=120, activation='relu', use_bias=True))
         model.add(Dropout(0.15))
         model.add(Dense(units=3, activation='softmax', use_bias=True))
         opt = Adam(learning_rate)

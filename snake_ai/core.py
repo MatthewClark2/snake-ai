@@ -117,6 +117,7 @@ class GameState:
         for food in self.food_items:
             if (food.pos == updated_pos).all():
                 has_eaten = True
+                self.turn_count = 0
                 break
         # has_eaten = any(self.snake.intersects(food.pos) for food in self.food_items)
         self.snake.move(direction, has_eaten)
@@ -216,8 +217,11 @@ class GameState:
             self.snake.intersects(right) or self._out_of_bounds(right),
         ]
 
-        relative_pos = (self.snake.head().pos - self.food_items[0].pos) / (self.width, self.length)
-        return np.hstack([relative_pos, vector])
+        vector = np.hstack([pos < self.food_items[0].pos,
+                            pos > self.food_items[0].pos,
+                            vector])
+
+        return np.array([1 if x else 0 for x in vector])
 
     def min_distance_to_food(self):
         # TODO(matthew-c21): Return both the scalar and vector. Prepend the vector to the linearized matrix

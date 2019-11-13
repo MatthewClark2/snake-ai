@@ -10,15 +10,12 @@ class TrainerTest(unittest.TestCase):
         snake = core.Snake(np.array([5, 5]), 2, core.LEFT)
         state = core.GameState(snake, 10, 10, seed=10)
 
-        old_state = None
-        new_state = None
+        has_eaten = False
 
         for _ in range(4):
-            old_state = state.to_matrix()
-            state.update(core.UP)
-            new_state = state.to_matrix()
+            has_eaten = state.update(core.UP)
 
-        actual_reward = trainer.determine_reward(old_state, new_state, state.is_playable())
+        actual_reward = trainer.determine_reward(state.is_playable(), 0, has_eaten)
         self.assertLess(0, actual_reward)
 
     def test_punishes_game_over(self):
@@ -28,12 +25,10 @@ class TrainerTest(unittest.TestCase):
         for _ in range(4):
             state.update(core.UP)
 
-        old_state = state.to_matrix()
         state.update(core.UP)
-        new_state = state.to_matrix()
 
         self.assertFalse(state.is_playable())
-        self.assertGreaterEqual(-1, trainer.determine_reward(old_state, new_state, state.is_playable()))
+        self.assertGreaterEqual(-1, trainer.determine_reward(False, state.is_playable(), False))
 
     def test_not_eating_gives_negative_distance(self):
         snake = core.Snake(np.array([5, 5]), 2, core.LEFT)
@@ -44,7 +39,7 @@ class TrainerTest(unittest.TestCase):
         new_state = state.to_matrix()
 
         # snake at (5, 4). Food at (5, 1).
-        self.assertEqual(-3.0, trainer.determine_reward(old_state, new_state, True, state.min_distance_to_food()))
+        self.assertEqual(-3.0, trainer.determine_reward(True, state.min_distance_to_food(), False))
 
     def test_punish_self_intersection(self):
         snake = core.Snake(np.array([5, 5]), 5, core.LEFT)
@@ -57,7 +52,7 @@ class TrainerTest(unittest.TestCase):
         state.update(core.UP)
         new_state = state.to_matrix()
 
-        self.assertGreaterEqual(-1, trainer.determine_reward(old_state, new_state, state.is_playable()))
+        self.assertGreaterEqual(-1, trainer.determine_reward(state.is_playable(), 0, False))
 
     def test_move_conversion_up(self):
         move = core.UP
