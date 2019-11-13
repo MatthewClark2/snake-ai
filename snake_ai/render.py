@@ -155,7 +155,7 @@ class PygameRenderer(Renderer):
         self.window.blit(text_surface, (self.text_area_start, self.length * self.block_size // 2))
 
         # Add a rectangle around the play area.
-        r = pygame.Rect(0, 0, (self.width + 1) * self.block_size, self.length * self.block_size)
+        r = pygame.Rect(0, 0, (self.width + 1) * self.block_size, (self.length + 1) * self.block_size)
 
         pygame.draw.rect(self.window, (0, 0, 0), r, 1)
 

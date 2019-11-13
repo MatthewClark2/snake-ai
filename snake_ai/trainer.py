@@ -90,7 +90,7 @@ def main(args=None):
         renderer = PygameRenderer(length, width, 20)
 
     # TODO(matthew-c21): This value changes in response to state.food_max.
-    agent = ai.DefaultAgent((7,), epsilon=0.5, gamma=0.95)
+    agent = ai.DefaultAgent((9,), epsilon=0.5, gamma=0.95)
 
     facing = init_dir
 

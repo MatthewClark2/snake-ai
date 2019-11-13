@@ -217,7 +217,8 @@ class GameState:
             self.snake.intersects(right) or self._out_of_bounds(right),
         ]
 
-        vector = np.hstack([pos < self.food_items[0].pos,
+        vector = np.hstack([pos - self.food_items[0].pos,
+                            pos < self.food_items[0].pos,
                             pos > self.food_items[0].pos,
                             vector])
 
