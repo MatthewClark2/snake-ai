@@ -31,9 +31,9 @@ def determine_reward(playable, min_distance, has_eaten):
     :param has_eaten a boolean determining whether or not the previous move resulted in eating."""
     # Punish game over.
     if not playable:
-        return -1
+        return -10
     elif has_eaten:
-        return 1
+        return 10
 
     return -min_distance
 
@@ -90,7 +90,7 @@ def main(args=None):
         renderer = PygameRenderer(length, width, 20)
 
     # TODO(matthew-c21): This value changes in response to state.food_max.
-    agent = ai.DefaultAgent((9,), epsilon=0.5, gamma=0.95)
+    agent = ai.DefaultAgent((8,), epsilon=0.5, gamma=0.95)
 
     facing = init_dir
 
@@ -104,7 +104,7 @@ def main(args=None):
     for i in range(1, n + 1):  # Number games from 1 to simplify math.
         rendering = games_shown != 0 and i % games_shown == 0
 
-        snake = core.Snake((width // 2, length // 2), 1, init_dir)
+        snake = core.Snake((width // 2 + 1, length // 2 + 1), 1, init_dir)
         state = core.GameState(snake, length, width, max_drought=max_drought, food_max=1)
 
         print('Game: %d, ' % i, end='')
@@ -120,7 +120,7 @@ def main(args=None):
             has_eaten = state.update(move)
 
             new_state = reshape(state.get_primitive_state_vector())
-            scaled_distance = 0  # distance(snake.head().pos, state.food_items[0].pos) / max_drought
+            scaled_distance = 0  # (1 - distance(snake.head().pos, state.food_items[0].pos)) / max_drought
             reward = determine_reward(state.is_playable(), scaled_distance, has_eaten)
 
             logging.info('Reward for move %d: %f' % (action, reward))

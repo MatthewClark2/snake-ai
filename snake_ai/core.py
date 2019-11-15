@@ -91,11 +91,11 @@ class GameState:
         self.snake = snake
         self.food_max = food_max
         self.food_items = []
-        self.previous_position = snake.head().pos
         self.score = 0
         self.max_drought = max_drought
         self.turn_count = 0
         self.state_flag = True
+        self.prev_move = None
         self.seed = seed if seed is not None else np.random.randint(2 ** 32)  # Hardcoded value for maximum seed.
         self._update_food()
 
@@ -105,7 +105,7 @@ class GameState:
         will occur."""
 
         if not self.state_flag:
-            return
+            return False
 
         # TODO(matthew-c21): Reset turn count after eating. Add corresponding tests.
         self.turn_count += 1
@@ -113,6 +113,7 @@ class GameState:
         has_eaten = False
 
         updated_pos = self.snake.fix_dir(direction) + self.snake.head().pos
+        self.prev_move = self.snake.fix_dir(direction)
 
         for food in self.food_items:
             if (food.pos == updated_pos).all():
@@ -215,11 +216,13 @@ class GameState:
             self.snake.intersects(ahead) or self._out_of_bounds(ahead),
             self.snake.intersects(left) or self._out_of_bounds(left),
             self.snake.intersects(right) or self._out_of_bounds(right),
+            (self.prev_move == UP).all(),
+            (self.prev_move == LEFT).all(),
+            (self.prev_move == RIGHT).all(),
         ]
 
-        vector = np.hstack([pos - self.food_items[0].pos,
+        vector = np.hstack([  # pos - self.food_items[0].pos,
                             pos < self.food_items[0].pos,
-                            pos > self.food_items[0].pos,
                             vector])
 
         return np.array([1 if x else 0 for x in vector])

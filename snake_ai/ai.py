@@ -79,11 +79,11 @@ class DefaultAgent(Agent):
     def train_short_memory(self, state, action, reward, next_state, done):
         target = reward
         if not done:
-            target += self.gamma * np.amax(self.model.predict(next_state)[0])
+            target = reward + self.gamma * np.amax(self.model.predict(next_state)[0])
 
         target_f = self.model.predict(state)
         target_f[0][action] = target
-        self.model.fit(state, target_f, epochs=5, verbose=0)
+        self.model.fit(state, target_f, epochs=1, verbose=0)
 
     def replay_new(self, max_sample=1000):
         """Retrain the model based on a sampling of its own memory."""
@@ -100,12 +100,12 @@ class DefaultAgent(Agent):
         # Shamelessly stolen from https://github.com/maurock/snake-ga/blob/master/DQN.py.
         # TODO(matthew-c21): Determine how output_dim affects model.
         model = Sequential()
-        model.add(Dense(units=120, activation='relu', input_shape=input_dim))
-        model.add(Dropout(0.15))
+        model.add(Dense(units=120, activation='relu', input_shape=input_dim, use_bias=True))
+        # model.add(Dropout(0.15))
         model.add(Dense(units=120, activation='relu', use_bias=True))
-        model.add(Dropout(0.15))
+        # model.add(Dropout(0.15))
         model.add(Dense(units=120, activation='relu', use_bias=True))
-        model.add(Dropout(0.15))
+        # model.add(Dropout(0.15))
         model.add(Dense(units=3, activation='softmax', use_bias=True))
         opt = Adam(learning_rate)
         model.compile(loss='mse', optimizer=opt)
